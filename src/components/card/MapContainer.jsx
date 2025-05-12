@@ -4,14 +4,16 @@ import CountrySelect from './CountrySelect';
 import ColorLegend from './ColorLegend';
 
 
-function MapContainer({ colorScale, weights, selectedCountry, onCountrySelect }) {
+function MapContainer({ colorScale, indicators, selectedCountry, onCountrySelect, countries, scores,  onCountryScoreChange }) {
   // Gestion locale du pays sélectionné via le composant CountrySelect
-  const handleCountrySelection = (country) => {
-    // Transmet la sélection au composant parent
-    if (onCountrySelect) {
-      onCountrySelect(country);
-    }
-  };
+  // const handleCountrySelection = (country) => {
+  //   // Transmet la sélection au composant parent
+  //   if (onCountrySelect) {
+  //     onCountrySelect(country);
+  //   }
+  // };
+
+  console.log("map container rendered")
 
   return (
     <div className="w-full xl:w-2/3">
@@ -19,8 +21,9 @@ function MapContainer({ colorScale, weights, selectedCountry, onCountrySelect })
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-semibold">Carte de l'Afrique</h3>
           <CountrySelect 
-            onSelectCountry={handleCountrySelection} 
+            onSelectCountry={onCountrySelect} 
             selectedCountry={selectedCountry}
+            countries={countries}
           />
         </div>
         
@@ -29,11 +32,14 @@ function MapContainer({ colorScale, weights, selectedCountry, onCountrySelect })
           <MapComponent 
             selectedCountry={selectedCountry}
             colorScale={colorScale}
-            weights={weights}
+            indicators={indicators}
+            countries={countries}
+            scores = {scores}
+            onCountryScoreChange = {onCountryScoreChange}
           />
         </div>
 
-        <ColorLegend colorScale={colorScale} />
+        {/* <ColorLegend colorScale={colorScale} /> */}
 
       </div>
     </div>

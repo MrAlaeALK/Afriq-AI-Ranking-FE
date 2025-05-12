@@ -53,9 +53,9 @@ export const data = [
    };
    
    // Regrouper les pays par région
-   export const getCountryGroups = () => {
+   export const getCountryGroups = (countries) => {
      const countryGroups = {};
-     data.forEach(country => {
+     countries.forEach(country => {
        if (!countryGroups[country.region]) {
          countryGroups[country.region] = [];
        }

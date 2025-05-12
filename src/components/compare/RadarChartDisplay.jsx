@@ -24,7 +24,7 @@ export default function RadarChartDisplay({ chartData, countryData }) {
           const link = document.createElement('a');
           let filename = 'comparaison';
           countryData.forEach(c => {
-            filename += `-${c.name.toLowerCase()}`;
+            filename += `-${c.countryName.toLowerCase()}`;
           });
           
           link.download = `${filename}.png`;
@@ -82,9 +82,9 @@ export default function RadarChartDisplay({ chartData, countryData }) {
               />
               {countryData.map((country, index) => (
                 <Radar
-                  key={country.id}
-                  name={`${country.flag} ${country.name}`}
-                  dataKey={`${country.flag} ${country.name}`}
+                  key={country.countryId}
+                  name={`${country.countryName[0]} ${country.countryName}`}
+                  dataKey={`${country.countryName[0]} ${country.countryName}`}
                   stroke={getColor(index)}
                   strokeWidth={2}
                   fill={getColor(index)}

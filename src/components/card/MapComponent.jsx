@@ -11,90 +11,173 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const MapComponent = ({ selectedCountry, colorScale, weights }) => {
+const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countries, onCountryScoreChange }) => {
   const [geojsonData, setGeojsonData] = useState(null);
   const [error, setError] = useState(null);
-  const [countryScores, setCountryScores] = useState([]);
+  // const [countryScores, setCountryScores] = useState([]);
   const [selectedCountryData, setSelectedCountryData] = useState(null);
   const [popupPosition, setPopupPosition] = useState(null);
   const mapRef = useRef(null);
 
   // Demo country data - in a real app, this would come from an API
-  const demoData = [
-    { id: 1, name: 'Rwanda', flag: '🇷🇼', region: 'East Africa',
-      scores: { global: 82, odin: 85, hdi: 76, internet: 84, education: 70, gdp: 65, innovation: 68, governance: 78, health: 72, environment: 69 }},
-    { id: 2, name: 'Mauritius', flag: '🇲🇺', region: 'East Africa',
-      scores: { global: 79, odin: 80, hdi: 88, internet: 70, education: 85, gdp: 82, innovation: 75, governance: 80, health: 84, environment: 77 }},
-    { id: 3, name: 'South Africa', flag: '🇿🇦', region: 'Southern Africa',
-      scores: { global: 76, odin: 78, hdi: 83, internet: 67, education: 79, gdp: 76, innovation: 82, governance: 72, health: 68, environment: 65 }},
-    { id: 4, name: 'Kenya', flag: '🇰🇪', region: 'East Africa',
-      scores: { global: 74, odin: 76, hdi: 70, internet: 75, education: 72, gdp: 68, innovation: 77, governance: 73, health: 70, environment: 72 }},
-    { id: 5, name: 'Morocco', flag: '🇲🇦', region: 'North Africa',
-      scores: { global: 72, odin: 68, hdi: 80, internet: 72, education: 75, gdp: 73, innovation: 70, governance: 68, health: 76, environment: 71 }},
-    { id: 6, name: 'Ghana', flag: '🇬🇭', region: 'West Africa',
-      scores: { global: 70, odin: 72, hdi: 65, internet: 73, education: 68, gdp: 67, innovation: 69, governance: 75, health: 64, environment: 68 }},
-    { id: 7, name: 'Tunisia', flag: '🇹🇳', region: 'North Africa',
-      scores: { global: 69, odin: 65, hdi: 79, internet: 68, education: 77, gdp: 71, innovation: 67, governance: 64, health: 75, environment: 70 }},
-    { id: 8, name: 'Senegal', flag: '🇸🇳', region: 'West Africa',
-      scores: { global: 67, odin: 70, hdi: 60, internet: 69, education: 63, gdp: 59, innovation: 66, governance: 71, health: 62, environment: 67 }},
-    { id: 9, name: 'Egypt', flag: '🇪🇬', region: 'North Africa',
-      scores: { global: 65, odin: 62, hdi: 73, internet: 64, education: 70, gdp: 68, innovation: 61, governance: 60, health: 72, environment: 59 }},
-    { id: 10, name: 'Ivory Coast', flag: '🇨🇮', region: 'West Africa',
-      scores: { global: 63, odin: 66, hdi: 55, internet: 67, education: 58, gdp: 62, innovation: 64, governance: 59, health: 57, environment: 63 }},
-    { id: 11, name: 'Nigeria', flag: '🇳🇬', region: 'West Africa',
-      scores: { global: 61, odin: 63, hdi: 59, internet: 60, education: 61, gdp: 65, innovation: 62, governance: 57, health: 58, environment: 56 }},
-    { id: 12, name: 'Tanzania', flag: '🇹🇿', region: 'East Africa',
-      scores: { global: 58, odin: 60, hdi: 54, internet: 59, education: 55, gdp: 53, innovation: 57, governance: 61, health: 56, environment: 62 }},
-    { id: 13, name: 'Ethiopia', flag: '🇪🇹', region: 'East Africa',
-      scores: { global: 55, odin: 57, hdi: 49, internet: 58, education: 51, gdp: 48, innovation: 54, governance: 56, health: 50, environment: 59 }},
-    { id: 14, name: 'Angola', flag: '🇦🇴', region: 'Southern Africa',
-      scores: { global: 52, odin: 53, hdi: 58, internet: 46, education: 50, gdp: 60, innovation: 47, governance: 45, health: 54, environment: 51 }},
-    { id: 15, name: 'Mozambique', flag: '🇲🇿', region: 'Southern Africa',
-      scores: { global: 49, odin: 50, hdi: 45, internet: 51, education: 46, gdp: 44, innovation: 48, governance: 52, health: 47, environment: 53 }},
-  ];
+  // const demoData = [
+  //   { id: 1, name: 'Rwanda', flag: '🇷🇼', region: 'East Africa',
+  //     scores: { global: 82, odin: 85, hdi: 76, internet: 84, education: 70, gdp: 65, innovation: 68, governance: 78, health: 72, environment: 69 }},
+  //   { id: 2, name: 'Mauritius', flag: '🇲🇺', region: 'East Africa',
+  //     scores: { global: 79, odin: 80, hdi: 88, internet: 70, education: 85, gdp: 82, innovation: 75, governance: 80, health: 84, environment: 77 }},
+  //   { id: 3, name: 'South Africa', flag: '🇿🇦', region: 'Southern Africa',
+  //     scores: { global: 76, odin: 78, hdi: 83, internet: 67, education: 79, gdp: 76, innovation: 82, governance: 72, health: 68, environment: 65 }},
+  //   { id: 4, name: 'Kenya', flag: '🇰🇪', region: 'East Africa',
+  //     scores: { global: 74, odin: 76, hdi: 70, internet: 75, education: 72, gdp: 68, innovation: 77, governance: 73, health: 70, environment: 72 }},
+  //   { id: 5, name: 'Morocco', flag: '🇲🇦', region: 'North Africa',
+  //     scores: { global: 72, odin: 68, hdi: 80, internet: 72, education: 75, gdp: 73, innovation: 70, governance: 68, health: 76, environment: 71 }},
+  //   { id: 6, name: 'Ghana', flag: '🇬🇭', region: 'West Africa',
+  //     scores: { global: 70, odin: 72, hdi: 65, internet: 73, education: 68, gdp: 67, innovation: 69, governance: 75, health: 64, environment: 68 }},
+  //   { id: 7, name: 'Tunisia', flag: '🇹🇳', region: 'North Africa',
+  //     scores: { global: 69, odin: 65, hdi: 79, internet: 68, education: 77, gdp: 71, innovation: 67, governance: 64, health: 75, environment: 70 }},
+  //   { id: 8, name: 'Senegal', flag: '🇸🇳', region: 'West Africa',
+  //     scores: { global: 67, odin: 70, hdi: 60, internet: 69, education: 63, gdp: 59, innovation: 66, governance: 71, health: 62, environment: 67 }},
+  //   { id: 9, name: 'Egypt', flag: '🇪🇬', region: 'North Africa',
+  //     scores: { global: 65, odin: 62, hdi: 73, internet: 64, education: 70, gdp: 68, innovation: 61, governance: 60, health: 72, environment: 59 }},
+  //   { id: 10, name: 'Ivory Coast', flag: '🇨🇮', region: 'West Africa',
+  //     scores: { global: 63, odin: 66, hdi: 55, internet: 67, education: 58, gdp: 62, innovation: 64, governance: 59, health: 57, environment: 63 }},
+  //   { id: 11, name: 'Nigeria', flag: '🇳🇬', region: 'West Africa',
+  //     scores: { global: 61, odin: 63, hdi: 59, internet: 60, education: 61, gdp: 65, innovation: 62, governance: 57, health: 58, environment: 56 }},
+  //   { id: 12, name: 'Tanzania', flag: '🇹🇿', region: 'East Africa',
+  //     scores: { global: 58, odin: 60, hdi: 54, internet: 59, education: 55, gdp: 53, innovation: 57, governance: 61, health: 56, environment: 62 }},
+  //   { id: 13, name: 'Ethiopia', flag: '🇪🇹', region: 'East Africa',
+  //     scores: { global: 55, odin: 57, hdi: 49, internet: 58, education: 51, gdp: 48, innovation: 54, governance: 56, health: 50, environment: 59 }},
+  //   { id: 14, name: 'Angola', flag: '🇦🇴', region: 'Southern Africa',
+  //     scores: { global: 52, odin: 53, hdi: 58, internet: 46, education: 50, gdp: 60, innovation: 47, governance: 45, health: 54, environment: 51 }},
+  //   { id: 15, name: 'Mozambique', flag: '🇲🇿', region: 'Southern Africa',
+  //     scores: { global: 49, odin: 50, hdi: 45, internet: 51, education: 46, gdp: 44, innovation: 48, governance: 52, health: 47, environment: 53 }},
+  // ];
 
   // Fonction pour calculer le score pondéré d'un pays
-  const calculateWeightedScore = (countryScores, weights) => {
-    if (!weights || Object.keys(weights).length === 0) {
-      return countryScores?.global || 0;
-    }
+  // const calculateWeightedScore = () => {
+  //   if (!indicators || indicators.length === 0) {
+  //     return 0;
+  //   }
     
-    let weightedScore = 0;
-    let totalWeight = 0;
+  //   let weightedScore = 0;
+  //   let totalWeight = 0;
+
+  //   countryScores.map(country => ({
+  //     ... country,
+  //     finalScore : indicators.forEach(indicator => {
+  //       if (scores[indicator.name] !== undefined) {
+  //       weightedScore += (scores[indicator.name] * indicator.weight);
+  //       totalWeight += indicator.weight;
+  //     }
+  //     })
+  //   }))
     
-    // Calculer le score pondéré en multipliant chaque critère par son poids
-    Object.keys(weights).forEach(criteria => {
-      if (countryScores?.[criteria] !== undefined) {
-        weightedScore += (countryScores[criteria] * weights[criteria]);
-        totalWeight += weights[criteria];
-      }
-    });
+  //   // Calculer le score pondéré en multipliant chaque critère par son poids
+  //   indicators.forEach(indicator => {
+  //     if (countryScores?.[indicator.name] !== undefined) {
+  //       weightedScore += (countryScores[indicator.name] * indicator.weight);
+  //       totalWeight += indicator.weight;
+  //     }
+  //   });
     
-    // Normaliser le score sur 100 si des poids ont été appliqués
-    return totalWeight > 0 ? weightedScore / totalWeight : countryScores?.global || 0;
-  };
+  //   // Normaliser le score sur 100 si des poids ont été appliqués
+  //   return totalWeight > 0 ? weightedScore / totalWeight :  0;
+  // };
 
   // Sort countries by weighted scores
-  const sortedCountries = useMemo(() => {
-    return [...demoData].sort((a, b) => {
-      const scoreA = calculateWeightedScore(a.scores, weights);
-      const scoreB = calculateWeightedScore(b.scores, weights);
-      return scoreB - scoreA;
-    });
-  }, [weights]);
+  // const sortedCountries = useMemo(() => {
+  //   // return [...countries].sort((a, b) => {
+  //   //   const scoreA = calculateWeightedScore(a.scores, indicators);
+  //   //   const scoreB = calculateWeightedScore(b.scores, indicators);
+  //   //   return scoreB - scoreA;
+  //   // });
+
+  //   return [...countries].sort((a,b) =>{
+  //     const scoreA = calculateWeightedScore(scores.filter(score => score.countryName === a.name).reduce((acc, score) => {
+  //       acc[score.indicatorName] = score.score
+  //     },{}), indicators)
+
+  //     const scoreB = calculateWeightedScore(scores.filter(score => score.countryName === a.name).reduce((acc , score) => {
+  //       acc[score.indicatorName] = score.score
+  //     },{}), indicators)
+
+  //     return scoreB - scoreA
+  //   }
+  //   )
+  // }, [indicators]);
   
   // Apply ranking based on sorted scores
-  const rankedCountries = useMemo(() => {
-    return sortedCountries.map((country, index) => ({
-      ...country,
-      rank: index + 1,
-      weightedScore: calculateWeightedScore(country.scores, weights)
-    }));
-  }, [sortedCountries, weights]);
+  // const rankedCountries = useMemo(() => {
+  //   return sortedCountries.map((country, index) => ({
+  //     ...country,
+  //     rank: index + 1,
+  //     finalScore: calculateWeightedScore(country.scores, indicators)
+  //   }));
+  // }, [sortedCountries]);
+
+  // useEffect(() => {
+  //   setCountryScores(rankedCountries);
+  // }, [rankedCountries]);
+  // console.log(countries)
+
+  // function calculateWeightedScores(){
+  //   console.log("this is map component")
+  //   console.log(countries)
+  //     return countries.map(country => {
+  //     const countryScores = scores.filter(score => score.countryName === country.countryName).reduce((countryScores,score) => {
+  //       countryScores[score.indicatorName] = score.score
+  //       // console.log(countryScores);
+  //       return countryScores;
+  //     },{})
+
+  //     let weightedScore = 0;
+  //     let totalWeights =  0;
+
+  //     indicators.forEach(indicator => {
+  //       if(countryScores[indicator.name] !== undefined){
+  //         weightedScore += countryScores[indicator.name] * indicator.weight;
+  //         totalWeights += indicator.weight;
+  //       }
+  //     })
+  //     // console.log(weightedScore/totalWeights)
+  //     return {
+  //         ...country,
+  //         finalScore : (totalWeights !== 0 ) ? weightedScore / totalWeights : 0
+  //     }
+  //   })
+  //   // console.log(indicators)
+  //   // onCountryScoreChange(newCountryScores)
+  // }
+
+  // function sortedCountries(){
+  //   const countriesFinalScores = calculateWeightedScores()
+  //   return [...countriesFinalScores].sort((a,b) => {
+  //     return b.finalScore - a.finalScore
+  //   })
+  // }
+  
+  // function rankedCountries() {
+  //   let newSortedCountries = sortedCountries()
+  //   const newRankedCountries = newSortedCountries.map(
+  //     (country,index) => { 
+  //       return {
+  //       ...country,
+  //       rank: index + 1}
+  //     }
+  //   )
+  //   // console.log(indicators)
+  //   onCountryScoreChange(newRankedCountries)
+  // }
+
+  // useEffect(() => {rankedCountries()
+  // console.log("4th useeffect hit")},[indicators])
+
+  const countriesRef = useRef(countries);
 
   useEffect(() => {
-    setCountryScores(rankedCountries);
-  }, [rankedCountries]);
+    countriesRef.current = countries;
+  }, [countries]);
+
 
   useEffect(() => {
     fetch('/geojson/africa_map.json')
@@ -151,7 +234,7 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
   useEffect(() => {
     if (selectedCountry && geojsonData) {
       // Utiliser les données les plus récentes (avec le rank et weightedScore actualisés)
-      const countryData = rankedCountries.find(c => c.name === selectedCountry);
+      const countryData = countries.find(c => c.countryName === selectedCountry);
       if (countryData) {
         const centroid = findCountryCentroid(selectedCountry);
         if (centroid) {
@@ -165,7 +248,7 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
         }
       }
     }
-  }, [selectedCountry, rankedCountries, geojsonData]);
+  }, [selectedCountry, countries, geojsonData]);
 
   // Get color based on score
   const getColorByScore = (score) => {
@@ -203,14 +286,14 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
       'Unknown country';
     
     // Find country data from rankedCountries to get the most up-to-date data
-    const countryData = rankedCountries.find(c => c.name === countryName);
+    const countryData = countries.find(c => c.countryName === countryName);
     
     // Utiliser directement weightedScore s'il existe, sinon calculer
     const weightedScore = countryData ? 
-      (countryData.weightedScore || calculateWeightedScore(countryData.scores, weights)) : 
+      countryData.finalScore: 
       undefined;
     
-    if ((selectedCountryData && countryName === selectedCountryData.name) || (selectedCountry && countryName === selectedCountry)) {
+    if ((selectedCountryData && countryName === selectedCountryData.countryName) || (selectedCountry && countryName === selectedCountry)) {
       return {
         fillColor: '#ff6b6b',
         weight: 2,
@@ -252,10 +335,14 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
         layer.setStyle(getGeoJSONStyle(feature));
       },
       click: (e) => {
-        console.log("Country clicked:", countryName);
-        
+        // console.log("Country clicked:", countryName);
+      
+          const countryData = countriesRef.current.find(
+    c => c.countryName === countryName
+  );
         // Utiliser rankedCountries pour avoir les données les plus récentes
-        const countryData = rankedCountries.find(c => c.name === countryName);
+        // const countryData = countries.find(c => c.countryName === countryName);
+        // console.log(countryData)
         
         if (countryData) {
           setSelectedCountryData(countryData);
@@ -289,7 +376,7 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
   };
 
   // Country popup content
-  const CountryPopup = ({ country, weights }) => {
+  const CountryPopup = ({ country, indicators }) => {
     if (!country) return null;
     
     // Display only criteria that are included in the weights object
@@ -308,18 +395,19 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
     // Toujours recalculer le score pondéré pour s'assurer qu'il utilise les poids actuels
     // Cela garantit que même si le composant ne se re-render pas,
     // nous avons le bon score affiché
-    const globScore = Number(calculateWeightedScore(country.scores, weights).toFixed(1));
+    // const globScore = Number(calculateWeightedScore(country.scores, weights).toFixed(1));
+    const globScore = country.finalScore
     
     // Trouver le pays avec les données mises à jour dans rankedCountries
-    const updatedCountry = rankedCountries.find(c => c.name === country.name);
+    const updatedCountry = countries.find(c => c.countryName === country.countryName);
     const currentRank = updatedCountry ? updatedCountry.rank : country.rank;
     
     return (
       <div className="country-popup" style={{ minWidth: '300px', maxWidth: '400px' }}>
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
-            <span className="text-2xl mr-2">{country.flag}</span>
-            <h3 className="text-xl font-bold">{country.name}</h3>
+            <span className="text-2xl mr-2">{country.countryName[0]}</span>
+            <h3 className="text-xl font-bold">{country.countryName}</h3>
           </div>
           <div className="bg-gray-100 rounded-full px-3 py-1 text-sm">
             Rank: #{currentRank}
@@ -342,15 +430,15 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
         
         <div className="space-y-2">
           <h4 className="font-medium">Score Details</h4>
-          {weights && Object.keys(weights).map(criteria => (
-            criteriaTitles[criteria] && (
-              <div key={criteria} className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">{criteriaTitles[criteria]} :</div>
+          {indicators && indicators.map(indicator => (
+            indicator.name && (
+              <div key={indicator.id} className="flex justify-between items-center">
+                <div className="text-sm text-gray-600">{indicator.name} :</div>
                 <div className="flex items-center">
                   <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${country.scores[criteria]}%` }}></div>
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score}%` }}></div>
                   </div>
-                  <ScoreBadge score={country.scores[criteria]} />
+                  <ScoreBadge score={scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score} />
                 </div>
               </div>
             )
@@ -359,7 +447,7 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
         
         <div className="mt-4 pt-3 border-t border-gray-200">
           <div className="text-xs text-gray-500">
-            Region: {country.region}
+            Region: {country.countryName[1]}
           </div>
         </div>
         
@@ -420,7 +508,7 @@ const MapComponent = ({ selectedCountry, colorScale, weights }) => {
             autoPan={true}
             closeButton={false}
           >
-            <CountryPopup country={selectedCountryData} weights={weights} />
+            <CountryPopup country={selectedCountryData} indicators={indicators} />
           </Popup>
         )}
       </MapContainer>

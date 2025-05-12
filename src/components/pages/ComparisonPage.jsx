@@ -7,22 +7,23 @@ import RadarChartDisplay from '../compare/RadarChartDisplay';
 import CountryCardList from '../compare/CountryCardList';
 import { data, criteriaLabels } from '../compare/Data';
 
-export default function ComparisonPage() {
+export default function ComparisonPage({countries, scores, defaultWeights, defaultFinalScores, setCountries}) {
+  console.log(defaultWeights)
+  console.log("comparison page rendered")
   // État pour stocker les pays sélectionnés
   const [selectedCountries, setSelectedCountries] = useState([null, null, null, null, null]);
   // État pour stocker les critères sélectionnés
-  const [selectedCriteria, setSelectedCriteria] = useState({
-    //global: true,
-    odin: true,
-    hdi: true,
-    internet: true,
-    education: false,
-    gdp: false,
-    innovation: false,
-    governance: false,
-    health: false,
-    environment: false
-  });
+  const [selectedCriteria, setSelectedCriteria] = useState({});
+
+  useEffect(() => {
+    const defaultSelectedCriteria = defaultWeights.reduce((indicatorsObject, indicator, index) => {
+    indicatorsObject[indicator.name] = (index > 3 ? false : true)
+    return indicatorsObject
+  },{})
+  setSelectedCriteria(defaultSelectedCriteria)
+  },[defaultWeights])
+
+  console.log(selectedCriteria)
   // Compteur de critères sélectionnés
   const [criteriaCount, setCriteriaCount] = useState(3);
   // Données pour le graphique
@@ -42,20 +43,20 @@ export default function ComparisonPage() {
     // Créer un objet pour chaque indicateur avec les valeurs de chaque pays
     indicators.forEach(indicator => {
       const dataPoint = {
-        indicator: criteriaLabels[indicator] || indicator,
+        indicator:  indicator,
       };
       
       // Ajouter les données de chaque pays sélectionné
       selectedCountries.forEach((countryId) => {
         if (countryId) {
-          const country = data.find(c => c.id === countryId);
+          const country = countries.find(c => c.countryId === countryId);
           if (country) {
             // Ajouter le pays à la liste des pays s'il n'y est pas déjà
-            if (!newCountryData.find(c => c.id === country.id)) {
+            if (!newCountryData.find(c => c.countryId === country.countryId)) {
               newCountryData.push(country);
             }
             // Ajouter la valeur de l'indicateur pour ce pays
-            dataPoint[`${country.flag} ${country.name}`] = country.scores[indicator];
+            dataPoint[`${country.countryName[0]} ${country.countryName}`] = scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator).score;
           }
         }
       });
@@ -116,12 +117,14 @@ export default function ComparisonPage() {
           selectedCriteria={selectedCriteria}
           criteriaCount={criteriaCount}
           onCriteriaChange={handleCriteriaChange}
+          defaultWeights={defaultWeights}
         />
         
         {/* Sélection des pays */}
         <CountrySelector 
           selectedCountries={selectedCountries}
           onCountryChange={handleCountryChange}
+          countries={countries}
         />
 
         {/* Conteneur pour CardList (gauche) et RadarChart (droite) */}
@@ -133,6 +136,7 @@ export default function ComparisonPage() {
                 <CountryCardList 
                   countryData={countryData} 
                   selectedCriteria={selectedCriteria} 
+                  scores = {scores}
                 />
               </div>
               
@@ -158,5 +162,5 @@ export default function ComparisonPage() {
         )}
       </main>
     </div>
-  );
+  );;
 }

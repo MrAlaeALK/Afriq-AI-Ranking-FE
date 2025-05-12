@@ -1,11 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import FilterPanel from './FilterPanel';
 import DisplayOptions from './DisplayOptions';
 import MapContainer from './MapContainer';
 import CountryRanking from './CountryRanking';
 import RegionalTrends from './RegionalTrends';
+import axios from 'axios'
 
-function MapSection() {
+function MapSection({indicators, setIndicators, countries, setCountries,defaultWeights, setDefaultWeights, scores, setScores}) {
+  //ADDED THINGS BY ME
+  const [error, setError] = useState(null)
+  // const [indicators, setIndicators] = useState([])
+  // const [defaultWeights, setDefaultWeights] = useState([])
+  // const [countries, setCountries] = useState([]);
+  // const [scores, setScores] = useState([])
+
+  console.log("map section rendered")
+
+
+  // const defaultWeights = indicators;
+  // console.log(defaultWeights)
+  // console.log(indicators)
+
+  //ALREADY EXISTS
   const [colorScale, setColorScale] = useState('green-red');
   const [weights, setWeights] = useState({
     'odin': 40,
@@ -14,16 +30,19 @@ function MapSection() {
   });
   const [selectedCountry, setSelectedCountry] = useState(null);
 
+  
+
   // Gestionnaire pour mettre à jour les poids depuis FilterPanel
-  const handleWeightsChange = (newWeights) => {
-    setWeights(newWeights);
-    // Vous pourriez également recalculer les scores globaux ici si nécessaire
-  };
+  // const handleWeightsChange = (newWeights) => {
+  //   setWeights(newWeights);
+  //   // Vous pourriez également recalculer les scores globaux ici si nécessaire
+  // };
 
   // Gestionnaire pour mettre à jour le pays sélectionné depuis MapContainer
-  const handleCountrySelect = (country) => {
-    setSelectedCountry(country);
-  };
+  // const handleCountrySelect = (country) => {
+  //   setSelectedCountry(country);
+  // };
+  // console.log(countries)
 
   return (
     <section className="pb-16">
@@ -31,7 +50,7 @@ function MapSection() {
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Colonne de gauche avec filtres et options */}
           <div className="w-full lg:w-1/4">
-            <FilterPanel onWeightsChange={handleWeightsChange} />
+            <FilterPanel onWeightsChange={setIndicators} defaultWeights={defaultWeights} indicators={indicators} countries={countries} onCountryScoreChange={setCountries} scores={scores}/>
             <DisplayOptions colorScale={colorScale} setColorScale={setColorScale} />
           </div>
           
@@ -40,18 +59,22 @@ function MapSection() {
             <div className="flex flex-col xl:flex-row gap-6">
               <MapContainer 
                 colorScale={colorScale} 
-                weights={weights}
+                indicators={indicators}
                 selectedCountry={selectedCountry}
-                onCountrySelect={handleCountrySelect}
+                onCountrySelect={setSelectedCountry}
+                scores= {scores}
+                countries = {countries}
+                onCountryScoreChange = {setCountries}
               />
               <CountryRanking 
                 colorScale={colorScale}
-                weights={weights} 
+                indicators={indicators} 
                 selectedCountry={selectedCountry}
-                onCountrySelect={handleCountrySelect}
+                onCountrySelect={setSelectedCountry}
+                countries={countries}
               />
             </div>
-            <RegionalTrends weights={weights} />
+            <RegionalTrends />
           </div>
         </div>
       </div>
@@ -59,4 +82,4 @@ function MapSection() {
   );
 }
 
-export default MapSection;
+export default MapSection;;

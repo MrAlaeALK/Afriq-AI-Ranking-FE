@@ -1,13 +1,13 @@
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-const RankingCharts = ({ countries, selectedCountries, weights }) => {
+const RankingCharts = ({ countries, selectedCountries, indicators, scores }) => {
   const selectedCountriesData = countries
-    .filter(country => selectedCountries.includes(country.id))
+    .filter(country => selectedCountries.includes(country.countryName))
     .slice(0, 5); // Maximum 5 pays
   
   // Fonction pour obtenir la couleur d'un critère
-  const getCriteriaColor = (criterion) => {
+  const getCriteriaColor = (indicator) => {
     const colorMap = {
       odin: '#9333ea', // purple-600
       hdi: '#22c55e', // green-500
@@ -20,11 +20,11 @@ const RankingCharts = ({ countries, selectedCountries, weights }) => {
       environment: '#10b981' // emerald-500
     };
     
-    return colorMap[criterion] || '#6b7280'; // gray-500 par défaut
+    return colorMap[indicator] || '#6b7280'; // gray-500 par défaut
   };
   
   // Fonction pour obtenir le label d'un critère
-  const getCriteriaLabel = (criterion) => {
+  const getCriteriaLabel = (indicator) => {
     const labelMap = {
       odin: 'ODIN',
       hdi: 'IDH',
@@ -37,7 +37,7 @@ const RankingCharts = ({ countries, selectedCountries, weights }) => {
       environment: 'Environnement'
     };
     
-    return labelMap[criterion] || criterion.toUpperCase();
+    return labelMap[indicator] || indicator.name.toUpperCase();
   };
   
   if (selectedCountriesData.length === 0) {
@@ -55,23 +55,23 @@ const RankingCharts = ({ countries, selectedCountries, weights }) => {
   
   // Préparer les données pour le graphique à barres
   const barData = selectedCountriesData.map(country => {
-    const data = { name: country.name };
+    const data = { name: country.countryName };
     
     // Ajouter les scores pour chaque critère sélectionné
-    Object.keys(weights).forEach(criterion => {
-      data[getCriteriaLabel(criterion)] = country.scores[criterion] || 0;
+    indicators.forEach(indicator => {
+      data[getCriteriaLabel(indicator)] = scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0;
     });
     
     return data;
   });
   
   // Définir les barres pour chaque critère sélectionné
-  const bars = Object.keys(weights).map(criterion => (
+  const bars = indicators.map(indicator => (
     <Bar 
-      key={criterion} 
-      dataKey={getCriteriaLabel(criterion)} 
-      fill={getCriteriaColor(criterion)} 
-      name={getCriteriaLabel(criterion)}
+      key={indicator.id} 
+      dataKey={getCriteriaLabel(indicator)} 
+      fill={getCriteriaColor(indicator)} 
+      name={getCriteriaLabel(indicator)}
     />
   ));
   
@@ -101,8 +101,8 @@ const RankingCharts = ({ countries, selectedCountries, weights }) => {
               key={country.id}
               className="flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full"
             >
-              <span className="mr-2">{country.flag}</span>
-              <span className="font-medium">{country.name}</span>
+              <span className="mr-2">{country.countryName[0]}</span>
+              <span className="font-medium">{country.countryName}</span>
             </div>
           ))}
         </div>

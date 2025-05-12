@@ -1,7 +1,7 @@
 import { getCountryGroups } from './Data';
 
-export default function CountrySelector({ selectedCountries, onCountryChange }) {
-  const countryGroups = getCountryGroups();
+export default function CountrySelector({ selectedCountries, onCountryChange, countries }) {
+  const countryGroups = getCountryGroups(countries);
   
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
@@ -19,8 +19,8 @@ export default function CountrySelector({ selectedCountries, onCountryChange }) 
               {Object.keys(countryGroups).map(region => (
                 <optgroup key={region} label={region}>
                   {countryGroups[region].map(country => (
-                    <option key={country.id} value={country.id}>
-                      {country.flag} {country.name}
+                    <option key={country.countryId} value={country.countryId}>
+                      {country.countryName[0]} {country.countryName}
                     </option>
                   ))}
                 </optgroup>

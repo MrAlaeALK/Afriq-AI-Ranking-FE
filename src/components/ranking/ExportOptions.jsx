@@ -2,11 +2,11 @@ import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
-const ExportOptions = ({ countries, weights }) => {
+const ExportOptions = ({ countries, indicators, scores}) => {
   // Fonction utilitaire pour obtenir les en-têtes et données formatées
   const getFormattedData = () => {
     const staticHeaders = ['Rang', 'Pays', 'Score global'];
-    const dynamicHeaders = Object.keys(weights).map(criterion => {
+    const dynamicHeaders = indicators.map(indicator => {
       const labels = {
         odin: 'ODIN',
         hdi: 'IDH',
@@ -18,18 +18,18 @@ const ExportOptions = ({ countries, weights }) => {
         health: 'Santé',
         environment: 'Environnement',
       };
-      return labels[criterion] || criterion.toUpperCase();
+      return labels[indicator.name] || indicator.name.toUpperCase();
     });
     const headers = [...staticHeaders, ...dynamicHeaders];
 
     const rows = countries.map(country => {
       const staticData = [
         country.rank,
-        country.name,
-        country.weightedScore || country.scores.global,
+        country.countryName,
+        country.finalScore || country.scores.global,
       ];
-      const dynamicData = Object.keys(weights).map(criterion =>
-        country.scores[criterion] !== undefined ? country.scores[criterion] : ''
+      const dynamicData = indicators.map(indicator =>
+        scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score !== undefined ? scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score : ''
       );
       return [...staticData, ...dynamicData];
     });

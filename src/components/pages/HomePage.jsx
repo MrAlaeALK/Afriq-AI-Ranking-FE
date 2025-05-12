@@ -6,11 +6,12 @@ import Partners from '../Partners';
 import Testimonials from '../Testimonials';
 import CallToAction from '../CallToAction';
 
-function HomePage() {
+function HomePage({indicators}) {
+  console.log("home page rendered")
   return (
     <>
       <Hero />
-      <Criteria />
+      <Criteria indicators = {indicators}/>
       <Partners />
       <Testimonials />
       <CallToAction />

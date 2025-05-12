@@ -1,6 +1,6 @@
 import React from 'react';
 
-const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSort, sortConfig, weights }) => {
+const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSort, sortConfig, indicators, scores }) => {
   const getClassNamesFor = (name) => {
     if (!sortConfig) {
       return;
@@ -54,40 +54,40 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
             <th className="w-12 py-3 px-4 text-left"></th>
             <th 
               className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
-              onClick={() => requestSort('name')}
+              onClick={() => requestSort('countryName')}
             >
               <div className="flex items-center">
                 Pays
                 <span className="ml-1">
-                  {getClassNamesFor('name') === 'ascending' ? '↑' : getClassNamesFor('name') === 'descending' ? '↓' : '↕'}
+                  {getClassNamesFor('countryName') === 'ascending' ? '↑' : getClassNamesFor('countryName') === 'descending' ? '↓' : '↕'}
                 </span>
               </div>
             </th>
             <th 
               className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
-              onClick={() => requestSort('weightedScore')}
+              onClick={() => requestSort('finalScore')}
             >
               <div className="flex items-center">
                 Score global
                 <span className="ml-1">
-                  {getClassNamesFor('weightedScore') === 'ascending' ? '↑' : getClassNamesFor('weightedScore') === 'descending' ? '↓' : '↕'}
+                  {getClassNamesFor('finalScore') === 'ascending' ? '↑' : getClassNamesFor('finalScore') === 'descending' ? '↓' : '↕'}
                 </span>
               </div>
             </th>
             
             {/* Colonnes dynamiques basées sur les poids sélectionnés */}
-            {Object.keys(weights).map(criterion => (
+            {indicators.map(indicator => (
               <th 
-                key={criterion}
+                key={indicator.id}
                 className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
-                onClick={() => requestSort(criterion)}
+                onClick={() => requestSort(indicator.name)}
               >
                 <div className="flex items-center">
-                  <span className={`${criteriaColors[criterion]?.bg || 'bg-gray-100'} ${criteriaColors[criterion]?.text || 'text-gray-800'} px-2 py-1 rounded`}>
-                    {criteriaLabels[criterion] || criterion.toUpperCase()}
+                  <span className={`${criteriaColors[indicator.name]?.bg || 'bg-gray-100'} ${criteriaColors[indicator.name]?.text || 'text-gray-800'} px-2 py-1 rounded`}>
+                    {criteriaLabels[indicator] || indicator.name.toUpperCase()}
                   </span>
                   <span className="ml-1">
-                    {getClassNamesFor(criterion) === 'ascending' ? '↑' : getClassNamesFor(criterion) === 'descending' ? '↓' : '↕'}
+                    {getClassNamesFor(indicator.name) === 'ascending' ? '↑' : getClassNamesFor(indicator.name) === 'descending' ? '↓' : '↕'}
                   </span>
                 </div>
               </th>
@@ -97,49 +97,49 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
         <tbody>
           {countries.map((country) => (
             <tr 
-              key={country.id} 
-              className={`border-t border-gray-200 ${selectedCountries.includes(country.id) ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
+              key={country.countryName} 
+              className={`border-t border-gray-200 ${selectedCountries.includes(country.countryName) ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
             >
               <td className="py-3 px-4">
                 <input 
                   type="checkbox" 
                   className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                  checked={selectedCountries.includes(country.id)}
-                  onChange={() => onCountrySelect(country.id)}
+                  checked={selectedCountries.includes(country.countryName)}
+                  onChange={() => onCountrySelect(country.countryName)}
                 />
               </td>
               <td className="py-3 px-4 font-medium">
                 {country.rank}
               </td>
               <td className="py-3 px-4 text-2xl">
-                {country.flag}
+                {country.countryName[0]}
               </td>
               <td className="py-3 px-4 font-medium">
-                {country.name}
+                {country.countryName}
               </td>
               <td className="py-3 px-4">
                 <div className="flex items-center">
                   <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
                     <div 
                       className="bg-purple-600 h-2.5 rounded-full" 
-                      style={{ width: `${country.weightedScore || country.scores.global}%` }}
+                      style={{ width: `${country.finalScore || country.scores.global}%` }}
                     ></div>
                   </div>
-                  <span className="font-medium">{country.weightedScore || country.scores.global}</span>
+                  <span className="font-medium">{country.finalScore || country.scores.global}</span>
                 </div>
               </td>
               
               {/* Cellules dynamiques basées sur les poids sélectionnés */}
-              {Object.keys(weights).map(criterion => (
-                <td key={criterion} className="py-3 px-4">
+              {indicators.map(indicator => (
+                <td key={indicator.id} className="py-3 px-4">
                   <div className="flex items-center">
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
                       <div 
-                        className={`${criteriaColors[criterion]?.bar || 'bg-gray-500'} h-2.5 rounded-full`}
-                        style={{ width: `${country.scores[criterion] || 0}%` }}
+                        className={`${criteriaColors[indicator.name]?.bar || 'bg-gray-500'} h-2.5 rounded-full`}
+                        style={{ width: `${scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0}%` }}
                       ></div>
                     </div>
-                    <span>{country.scores[criterion] || 0}</span>
+                    <span>{scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0}</span>
                   </div>
                 </td>
               ))}
