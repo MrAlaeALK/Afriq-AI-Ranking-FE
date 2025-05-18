@@ -1,6 +1,12 @@
-import React from 'react';
+import { IndicatorContext } from "../../context/IndicatorContext";
+import { ScoresContext } from "../../context/ScoresContext";
+import { useContext } from "react";
 
-const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSort, sortConfig, indicators, scores }) => {
+const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySelect, requestSort, sortConfig  }) => {
+
+  const {indicators} = useContext(IndicatorContext);
+  const {scores} = useContext(ScoresContext);
+  
   const getClassNamesFor = (name) => {
     if (!sortConfig) {
       return;
@@ -33,14 +39,14 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
     health: 'Santé',
     environment: 'Environnement'
   };
-  
+
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full bg-white border border-gray-200">
         <thead>
           <tr className="bg-gray-100">
             <th className="w-12 py-3 px-4 text-left"></th>
-            <th 
+            <th
               className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
               onClick={() => requestSort('rank')}
             >
@@ -52,7 +58,7 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
               </div>
             </th>
             <th className="w-12 py-3 px-4 text-left"></th>
-            <th 
+            <th
               className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
               onClick={() => requestSort('countryName')}
             >
@@ -63,7 +69,7 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
                 </span>
               </div>
             </th>
-            <th 
+            <th
               className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
               onClick={() => requestSort('finalScore')}
             >
@@ -74,10 +80,10 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
                 </span>
               </div>
             </th>
-            
+
             {/* Colonnes dynamiques basées sur les poids sélectionnés */}
             {indicators.map(indicator => (
-              <th 
+              <th
                 key={indicator.id}
                 className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
                 onClick={() => requestSort(indicator.name)}
@@ -95,14 +101,14 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
           </tr>
         </thead>
         <tbody>
-          {countries.map((country) => (
-            <tr 
-              key={country.countryName} 
+          {filteredCountriesRanking.map((country) => (
+            <tr
+              key={country.countryName}
               className={`border-t border-gray-200 ${selectedCountries.includes(country.countryName) ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
             >
               <td className="py-3 px-4">
-                <input 
-                  type="checkbox" 
+                <input
+                  type="checkbox"
                   className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                   checked={selectedCountries.includes(country.countryName)}
                   onChange={() => onCountrySelect(country.countryName)}
@@ -120,21 +126,21 @@ const CountryTable = ({ countries, selectedCountries, onCountrySelect, requestSo
               <td className="py-3 px-4">
                 <div className="flex items-center">
                   <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                    <div 
-                      className="bg-purple-600 h-2.5 rounded-full" 
+                    <div
+                      className="bg-purple-600 h-2.5 rounded-full"
                       style={{ width: `${country.finalScore || country.scores.global}%` }}
                     ></div>
                   </div>
                   <span className="font-medium">{country.finalScore || country.scores.global}</span>
                 </div>
               </td>
-              
+
               {/* Cellules dynamiques basées sur les poids sélectionnés */}
               {indicators.map(indicator => (
                 <td key={indicator.id} className="py-3 px-4">
                   <div className="flex items-center">
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                      <div 
+                      <div
                         className={`${criteriaColors[indicator.name]?.bar || 'bg-gray-500'} h-2.5 rounded-full`}
                         style={{ width: `${scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0}%` }}
                       ></div>

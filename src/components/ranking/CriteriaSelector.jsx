@@ -1,41 +1,41 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 const CriteriaSelector = ({ weights, setWeights }) => {
   const [selectedCriteria, setSelectedCriteria] = useState('');
-  
+
   const handleCriteriaChange = (e) => {
     const selected = e.target.value;
     if (!selected) return;
-    
+
     setSelectedCriteria('');
-    
+
     // Vérifier si le critère est déjà dans les poids
     if (weights.hasOwnProperty(selected)) {
       alert(`Le critère "${getCriteriaLabel(selected)}" est déjà sélectionné.`);
       return;
     }
-    
+
     // Calculer les nouveaux poids
     const currentTotal = Object.values(weights).reduce((sum, val) => sum + val, 0);
     const otherCriteria = Object.keys(weights);
-    
+
     // Valeur par défaut pour le nouveau critère: 30%
     const newValue = 30;
-    
+
     if (currentTotal + newValue > 100) {
       // Ajuster les poids existants pour faire de la place au nouveau critère
       const remaining = 100 - newValue;
       const scalingFactor = remaining / currentTotal;
-      
+
       const newWeights = { ...weights };
-      
+
       otherCriteria.forEach(key => {
         newWeights[key] = Math.round(weights[key] * scalingFactor);
       });
-      
+
       // Ajouter le nouveau critère
       newWeights[selected] = newValue;
-      
+
       // Ajuster si la somme n'est pas exactement 100 à cause des arrondis
       const totalAfterAdjustment = Object.values(newWeights).reduce((sum, val) => sum + val, 0);
       if (totalAfterAdjustment !== 100) {
@@ -46,7 +46,7 @@ const CriteriaSelector = ({ weights, setWeights }) => {
           newWeights[selected] += diff;
         }
       }
-      
+
       setWeights(newWeights);
     } else {
       // Simplement ajouter le nouveau critère
@@ -56,25 +56,25 @@ const CriteriaSelector = ({ weights, setWeights }) => {
       });
     }
   };
-  
+
   const handleRemoveCriteria = (criteriaKey) => {
     if (Object.keys(weights).length <= 1) {
       alert("Vous devez conserver au moins un critère.");
       return;
     }
-    
+
     const newWeights = { ...weights };
     delete newWeights[criteriaKey];
-    
+
     // Redistribuer les poids pour que le total reste 100%
     const currentTotal = Object.values(newWeights).reduce((sum, val) => sum + val, 0);
     if (currentTotal > 0) {
       const scalingFactor = 100 / currentTotal;
-      
+
       Object.keys(newWeights).forEach(key => {
         newWeights[key] = Math.round(newWeights[key] * scalingFactor);
       });
-      
+
       // Ajuster si la somme n'est pas exactement 100 à cause des arrondis
       const totalAfterAdjustment = Object.values(newWeights).reduce((sum, val) => sum + val, 0);
       if (totalAfterAdjustment !== 100 && Object.keys(newWeights).length > 0) {
@@ -82,7 +82,7 @@ const CriteriaSelector = ({ weights, setWeights }) => {
         newWeights[Object.keys(newWeights)[0]] += diff;
       }
     }
-    
+
     setWeights(newWeights);
   };
 
@@ -98,17 +98,17 @@ const CriteriaSelector = ({ weights, setWeights }) => {
     { key: 'health', label: 'Santé', color: 'teal' },
     { key: 'environment', label: 'Environnement', color: 'emerald' }
   ];
-  
+
   const getCriteriaLabel = (key) => {
     const criteria = availableCriteria.find(c => c.key === key);
     return criteria ? criteria.label : key;
   };
-  
+
   const getCriteriaColor = (key) => {
     const criteria = availableCriteria.find(c => c.key === key);
     return criteria ? criteria.color : 'gray';
   };
-  
+
   const getColorClasses = (color) => {
     switch (color) {
       case 'purple':
@@ -133,13 +133,13 @@ const CriteriaSelector = ({ weights, setWeights }) => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-  
+
   return (
     <div className="mb-6">
       <h4 className="font-medium text-gray-700 mb-4">Ajouter des critères d'évaluation</h4>
-      
+
       <div className="flex gap-2 mb-6">
-        <select 
+        <select
           value={selectedCriteria}
           onChange={handleCriteriaChange}
           className="flex-grow border-gray-300 rounded-md shadow-sm focus:border-purple-500 focus:ring focus:ring-purple-500 focus:ring-opacity-50"
@@ -152,7 +152,7 @@ const CriteriaSelector = ({ weights, setWeights }) => {
           ))}
         </select>
       </div>
-      
+
       <div className="space-y-4">
         {Object.entries(weights).map(([key, value]) => (
           <div key={key} className="bg-gray-50 p-3 rounded-lg">
@@ -165,7 +165,7 @@ const CriteriaSelector = ({ weights, setWeights }) => {
               </div>
               <div className="flex items-center">
                 <span className="text-sm font-medium mr-2">{value}%</span>
-                <button 
+                <button
                   onClick={() => handleRemoveCriteria(key)}
                   className="p-1 text-gray-400 hover:text-red-500 transition-colors"
                   aria-label="Supprimer ce critère"
@@ -176,35 +176,35 @@ const CriteriaSelector = ({ weights, setWeights }) => {
                 </button>
               </div>
             </div>
-            <input 
-              type="range" 
-              min="0" 
-              max="100" 
+            <input
+              type="range"
+              min="0"
+              max="100"
               value={value}
               onChange={(e) => {
                 const newValue = parseInt(e.target.value);
                 const otherWeightsTotal = Object.entries(weights)
                   .filter(([k]) => k !== key)
                   .reduce((sum, [, val]) => sum + val, 0);
-                
+
                 if (newValue + otherWeightsTotal > 100) {
                   return; // Ne pas permettre un total > 100%
                 }
-                
+
                 // Mettre à jour le poids
                 const newWeights = { ...weights, [key]: newValue };
-                
+
                 // Ajuster les autres poids si nécessaire pour que le total soit 100%
                 const remaining = 100 - newValue;
                 const otherCriteria = Object.keys(weights).filter(k => k !== key);
-                
+
                 if (otherWeightsTotal > 0) {
                   const scalingFactor = remaining / otherWeightsTotal;
-                  
+
                   otherCriteria.forEach(k => {
                     newWeights[k] = Math.round(weights[k] * scalingFactor);
                   });
-                  
+
                   // Ajuster si la somme n'est pas exactement 100 à cause des arrondis
                   const totalAfterAdjustment = Object.values(newWeights).reduce((sum, val) => sum + val, 0);
                   if (totalAfterAdjustment !== 100) {
@@ -212,7 +212,7 @@ const CriteriaSelector = ({ weights, setWeights }) => {
                     newWeights[otherCriteria[0]] += diff;
                   }
                 }
-                
+
                 setWeights(newWeights);
               }}
               className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
@@ -220,7 +220,7 @@ const CriteriaSelector = ({ weights, setWeights }) => {
           </div>
         ))}
       </div>
-      
+
       <div className="mt-4 p-3 bg-gray-50 rounded-lg">
         <div className="flex justify-between text-sm font-medium">
           <span>Total:</span>

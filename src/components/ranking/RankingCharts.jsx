@@ -1,11 +1,17 @@
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import { CountriesRankingContext } from '../../context/CountriesRankingContext';
+import { IndicatorContext } from '../../context/IndicatorContext';
+import { ScoresContext } from '../../context/ScoresContext';
+import { useContext } from 'react';
 
-const RankingCharts = ({ countries, selectedCountries, indicators, scores }) => {
-  const selectedCountriesData = countries
+const RankingCharts = ({ selectedCountries }) => {
+  const {countriesRanking} = useContext(CountriesRankingContext);
+  const {indicators} = useContext(IndicatorContext);
+  const {scores} = useContext(ScoresContext)
+  const selectedCountriesData = countriesRanking
     .filter(country => selectedCountries.includes(country.countryName))
     .slice(0, 5); // Maximum 5 pays
-  
+
   // Fonction pour obtenir la couleur d'un critère
   const getCriteriaColor = (indicator) => {
     const colorMap = {
@@ -19,10 +25,10 @@ const RankingCharts = ({ countries, selectedCountries, indicators, scores }) => 
       health: '#14b8a6', // teal-500
       environment: '#10b981' // emerald-500
     };
-    
+
     return colorMap[indicator] || '#6b7280'; // gray-500 par défaut
   };
-  
+
   // Fonction pour obtenir le label d'un critère
   const getCriteriaLabel = (indicator) => {
     const labelMap = {
@@ -36,10 +42,10 @@ const RankingCharts = ({ countries, selectedCountries, indicators, scores }) => 
       health: 'Santé',
       environment: 'Environnement'
     };
-    
+
     return labelMap[indicator] || indicator.name.toUpperCase();
   };
-  
+
   if (selectedCountriesData.length === 0) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-6">
@@ -52,33 +58,33 @@ const RankingCharts = ({ countries, selectedCountries, indicators, scores }) => 
       </div>
     );
   }
-  
+
   // Préparer les données pour le graphique à barres
   const barData = selectedCountriesData.map(country => {
     const data = { name: country.countryName };
-    
+
     // Ajouter les scores pour chaque critère sélectionné
     indicators.forEach(indicator => {
       data[getCriteriaLabel(indicator)] = scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0;
     });
-    
+
     return data;
   });
-  
+
   // Définir les barres pour chaque critère sélectionné
   const bars = indicators.map(indicator => (
-    <Bar 
-      key={indicator.id} 
-      dataKey={getCriteriaLabel(indicator)} 
-      fill={getCriteriaColor(indicator)} 
+    <Bar
+      key={indicator.id}
+      dataKey={getCriteriaLabel(indicator)}
+      fill={getCriteriaColor(indicator)}
       name={getCriteriaLabel(indicator)}
     />
   ));
-  
+
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
       <h3 className="text-xl font-bold mb-6">Comparaison graphique</h3>
-      
+
       <div className="mb-8">
         <h4 className="font-medium text-gray-700 mb-4">Comparaison des scores par critère</h4>
         <ResponsiveContainer width="100%" height={350}>
@@ -86,18 +92,18 @@ const RankingCharts = ({ countries, selectedCountries, indicators, scores }) => 
             <XAxis dataKey="name" />
             <YAxis domain={[0, 100]} />
             <Tooltip contentStyle={{ backgroundColor: "#f9f9f9", borderRadius: 10 }}
-              />
+            />
             <Legend />
             {bars}
           </BarChart>
         </ResponsiveContainer>
       </div>
-      
+
       <div className="p-4 bg-gray-50 rounded-lg">
         <h4 className="font-medium text-gray-700 mb-2">Pays sélectionnés</h4>
         <div className="flex flex-wrap gap-2">
           {selectedCountriesData.map(country => (
-            <div 
+            <div
               key={country.id}
               className="flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full"
             >

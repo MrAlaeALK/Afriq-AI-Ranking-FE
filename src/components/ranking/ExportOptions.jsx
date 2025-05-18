@@ -1,8 +1,13 @@
-import React from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { IndicatorContext } from '../../context/IndicatorContext';
+import { ScoresContext } from '../../context/ScoresContext';
+import { useContext } from 'react';
 
-const ExportOptions = ({ countries, indicators, scores}) => {
+const ExportOptions = ({ filteredCountriesRanking }) => {
+
+  const {indicators} = useContext(IndicatorContext);
+  const {scores} = useContext(ScoresContext);
   // Fonction utilitaire pour obtenir les en-têtes et données formatées
   const getFormattedData = () => {
     const staticHeaders = ['Rang', 'Pays', 'Score global'];
@@ -22,7 +27,7 @@ const ExportOptions = ({ countries, indicators, scores}) => {
     });
     const headers = [...staticHeaders, ...dynamicHeaders];
 
-    const rows = countries.map(country => {
+    const rows = filteredCountriesRanking.map(country => {
       const staticData = [
         country.rank,
         country.countryName,

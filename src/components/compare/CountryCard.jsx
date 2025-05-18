@@ -1,11 +1,11 @@
+import { ScoresContext } from '../../context/ScoresContext';
 import { getColor } from './Data';
-import { criteriaLabels } from './Data';
+import { useContext } from 'react';
 
-export default function CountryCard({ country, index, selectedCriteria, scores }) {
-  // scores
-  //           .filter(score => score.countryName === country.countryName && selectedCriteria[score.indicatorName]).reduce((scoresObject, score) => {
-  //             scoresObject[score.indicatorName] = score.score
-  //             console.log(scoresObject)})
+export default function CountryCard({ country, index, selectedCriteria }) {
+
+  const {scores} = useContext(ScoresContext);
+
   return (
     <div className="bg-gray-50 rounded-lg shadow overflow-hidden border-t-4" style={{ borderColor: getColor(index) }}>
       <div className="p-4 bg-gray-100">
@@ -20,7 +20,7 @@ export default function CountryCard({ country, index, selectedCriteria, scores }
             .filter(score => score.countryName === country.countryName && selectedCriteria[score.indicatorName]).reduce((scoresObject, score) => {
               scoresObject[score.indicatorName] = score.score
               return scoresObject
-            },{}))
+            }, {}))
             .map(([key, value]) => (
               <div key={key} className="flex items-center">
                 <div className="w-1/3 font-medium">
@@ -28,10 +28,10 @@ export default function CountryCard({ country, index, selectedCriteria, scores }
                 </div>
                 <div className="w-2/3">
                   <div className="w-full bg-gray-200 rounded-full h-3">
-                    <div 
-                      className="h-3 rounded-full" 
-                      style={{ 
-                        width: `${value}%`, 
+                    <div
+                      className="h-3 rounded-full"
+                      style={{
+                        width: `${value}%`,
                         backgroundColor: getColor(index)
                       }}
                     ></div>

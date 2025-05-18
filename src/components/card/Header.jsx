@@ -1,6 +1,6 @@
 // components/Header.js
-import React, { useState } from 'react';
-import '../index.css'
+import { useState } from 'react';
+import '../index.css';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -11,7 +11,7 @@ const Header = () => {
         <div className="flex items-center">
           <img src="/images/afriq_ai_logo.jpeg" alt="Logo Afriq'AI" className="h-10 w-auto" />
         </div>
-        
+
         <nav className={`${isMenuOpen ? 'flex' : 'hidden'} md:flex flex-col md:flex-row absolute md:relative top-16 md:top-0 left-0 right-0 bg-white md:bg-transparent p-4 md:p-0 shadow-md md:shadow-none md:items-center space-y-4 md:space-y-0 md:space-x-6`}>
           <a href="#" className="text-purple-700 font-medium">
             Accueil
@@ -32,7 +32,7 @@ const Header = () => {
             Contact
           </a>
         </nav>
-        
+
         <div className="flex items-center">
           <div className="relative inline-block text-left">
             <button type="button" className="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none">
@@ -42,8 +42,8 @@ const Header = () => {
               </svg>
             </button>
           </div>
-          
-          <button 
+
+          <button
             className="md:hidden ml-4 text-gray-600"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >

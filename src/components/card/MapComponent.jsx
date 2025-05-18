@@ -1,7 +1,10 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
-import { MapContainer, TileLayer, GeoJSON, Popup, ZoomControl } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useEffect, useRef, useState, useContext, useCallback } from 'react';
+import { GeoJSON, MapContainer, Popup, TileLayer, ZoomControl, useMap } from 'react-leaflet';
+import { CountriesRankingContext } from '../../context/CountriesRankingContext';
+import { IndicatorContext } from '../../context/IndicatorContext';
+import { ScoresContext } from '../../context/ScoresContext';
 
 // Fix Leaflet icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -11,176 +14,58 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countries, onCountryScoreChange }) => {
+const MapComponent = ({ selectedCountry, colorScale }) => {
+
+  const {countriesRanking} = useContext(CountriesRankingContext);
+  const {indicators} = useContext(IndicatorContext);
+  const {scores} = useContext(ScoresContext)
   const [geojsonData, setGeojsonData] = useState(null);
   const [error, setError] = useState(null);
-  // const [countryScores, setCountryScores] = useState([]);
   const [selectedCountryData, setSelectedCountryData] = useState(null);
   const [popupPosition, setPopupPosition] = useState(null);
   const mapRef = useRef(null);
+  // const [mapCenter, setMapCenter] = useState([5, 20]);
 
-  // Demo country data - in a real app, this would come from an API
-  // const demoData = [
-  //   { id: 1, name: 'Rwanda', flag: '🇷🇼', region: 'East Africa',
-  //     scores: { global: 82, odin: 85, hdi: 76, internet: 84, education: 70, gdp: 65, innovation: 68, governance: 78, health: 72, environment: 69 }},
-  //   { id: 2, name: 'Mauritius', flag: '🇲🇺', region: 'East Africa',
-  //     scores: { global: 79, odin: 80, hdi: 88, internet: 70, education: 85, gdp: 82, innovation: 75, governance: 80, health: 84, environment: 77 }},
-  //   { id: 3, name: 'South Africa', flag: '🇿🇦', region: 'Southern Africa',
-  //     scores: { global: 76, odin: 78, hdi: 83, internet: 67, education: 79, gdp: 76, innovation: 82, governance: 72, health: 68, environment: 65 }},
-  //   { id: 4, name: 'Kenya', flag: '🇰🇪', region: 'East Africa',
-  //     scores: { global: 74, odin: 76, hdi: 70, internet: 75, education: 72, gdp: 68, innovation: 77, governance: 73, health: 70, environment: 72 }},
-  //   { id: 5, name: 'Morocco', flag: '🇲🇦', region: 'North Africa',
-  //     scores: { global: 72, odin: 68, hdi: 80, internet: 72, education: 75, gdp: 73, innovation: 70, governance: 68, health: 76, environment: 71 }},
-  //   { id: 6, name: 'Ghana', flag: '🇬🇭', region: 'West Africa',
-  //     scores: { global: 70, odin: 72, hdi: 65, internet: 73, education: 68, gdp: 67, innovation: 69, governance: 75, health: 64, environment: 68 }},
-  //   { id: 7, name: 'Tunisia', flag: '🇹🇳', region: 'North Africa',
-  //     scores: { global: 69, odin: 65, hdi: 79, internet: 68, education: 77, gdp: 71, innovation: 67, governance: 64, health: 75, environment: 70 }},
-  //   { id: 8, name: 'Senegal', flag: '🇸🇳', region: 'West Africa',
-  //     scores: { global: 67, odin: 70, hdi: 60, internet: 69, education: 63, gdp: 59, innovation: 66, governance: 71, health: 62, environment: 67 }},
-  //   { id: 9, name: 'Egypt', flag: '🇪🇬', region: 'North Africa',
-  //     scores: { global: 65, odin: 62, hdi: 73, internet: 64, education: 70, gdp: 68, innovation: 61, governance: 60, health: 72, environment: 59 }},
-  //   { id: 10, name: 'Ivory Coast', flag: '🇨🇮', region: 'West Africa',
-  //     scores: { global: 63, odin: 66, hdi: 55, internet: 67, education: 58, gdp: 62, innovation: 64, governance: 59, health: 57, environment: 63 }},
-  //   { id: 11, name: 'Nigeria', flag: '🇳🇬', region: 'West Africa',
-  //     scores: { global: 61, odin: 63, hdi: 59, internet: 60, education: 61, gdp: 65, innovation: 62, governance: 57, health: 58, environment: 56 }},
-  //   { id: 12, name: 'Tanzania', flag: '🇹🇿', region: 'East Africa',
-  //     scores: { global: 58, odin: 60, hdi: 54, internet: 59, education: 55, gdp: 53, innovation: 57, governance: 61, health: 56, environment: 62 }},
-  //   { id: 13, name: 'Ethiopia', flag: '🇪🇹', region: 'East Africa',
-  //     scores: { global: 55, odin: 57, hdi: 49, internet: 58, education: 51, gdp: 48, innovation: 54, governance: 56, health: 50, environment: 59 }},
-  //   { id: 14, name: 'Angola', flag: '🇦🇴', region: 'Southern Africa',
-  //     scores: { global: 52, odin: 53, hdi: 58, internet: 46, education: 50, gdp: 60, innovation: 47, governance: 45, health: 54, environment: 51 }},
-  //   { id: 15, name: 'Mozambique', flag: '🇲🇿', region: 'Southern Africa',
-  //     scores: { global: 49, odin: 50, hdi: 45, internet: 51, education: 46, gdp: 44, innovation: 48, governance: 52, health: 47, environment: 53 }},
-  // ];
+  // console.log(mapCenter)
 
-  // Fonction pour calculer le score pondéré d'un pays
-  // const calculateWeightedScore = () => {
-  //   if (!indicators || indicators.length === 0) {
-  //     return 0;
-  //   }
-    
-  //   let weightedScore = 0;
-  //   let totalWeight = 0;
-
-  //   countryScores.map(country => ({
-  //     ... country,
-  //     finalScore : indicators.forEach(indicator => {
-  //       if (scores[indicator.name] !== undefined) {
-  //       weightedScore += (scores[indicator.name] * indicator.weight);
-  //       totalWeight += indicator.weight;
-  //     }
-  //     })
-  //   }))
-    
-  //   // Calculer le score pondéré en multipliant chaque critère par son poids
-  //   indicators.forEach(indicator => {
-  //     if (countryScores?.[indicator.name] !== undefined) {
-  //       weightedScore += (countryScores[indicator.name] * indicator.weight);
-  //       totalWeight += indicator.weight;
-  //     }
-  //   });
-    
-  //   // Normaliser le score sur 100 si des poids ont été appliqués
-  //   return totalWeight > 0 ? weightedScore / totalWeight :  0;
-  // };
-
-  // Sort countries by weighted scores
-  // const sortedCountries = useMemo(() => {
-  //   // return [...countries].sort((a, b) => {
-  //   //   const scoreA = calculateWeightedScore(a.scores, indicators);
-  //   //   const scoreB = calculateWeightedScore(b.scores, indicators);
-  //   //   return scoreB - scoreA;
-  //   // });
-
-  //   return [...countries].sort((a,b) =>{
-  //     const scoreA = calculateWeightedScore(scores.filter(score => score.countryName === a.name).reduce((acc, score) => {
-  //       acc[score.indicatorName] = score.score
-  //     },{}), indicators)
-
-  //     const scoreB = calculateWeightedScore(scores.filter(score => score.countryName === a.name).reduce((acc , score) => {
-  //       acc[score.indicatorName] = score.score
-  //     },{}), indicators)
-
-  //     return scoreB - scoreA
-  //   }
-  //   )
-  // }, [indicators]);
-  
-  // Apply ranking based on sorted scores
-  // const rankedCountries = useMemo(() => {
-  //   return sortedCountries.map((country, index) => ({
-  //     ...country,
-  //     rank: index + 1,
-  //     finalScore: calculateWeightedScore(country.scores, indicators)
-  //   }));
-  // }, [sortedCountries]);
-
-  // useEffect(() => {
-  //   setCountryScores(rankedCountries);
-  // }, [rankedCountries]);
-  // console.log(countries)
-
-  // function calculateWeightedScores(){
-  //   console.log("this is map component")
-  //   console.log(countries)
-  //     return countries.map(country => {
-  //     const countryScores = scores.filter(score => score.countryName === country.countryName).reduce((countryScores,score) => {
-  //       countryScores[score.indicatorName] = score.score
-  //       // console.log(countryScores);
-  //       return countryScores;
-  //     },{})
-
-  //     let weightedScore = 0;
-  //     let totalWeights =  0;
-
-  //     indicators.forEach(indicator => {
-  //       if(countryScores[indicator.name] !== undefined){
-  //         weightedScore += countryScores[indicator.name] * indicator.weight;
-  //         totalWeights += indicator.weight;
-  //       }
-  //     })
-  //     // console.log(weightedScore/totalWeights)
-  //     return {
-  //         ...country,
-  //         finalScore : (totalWeights !== 0 ) ? weightedScore / totalWeights : 0
-  //     }
-  //   })
-  //   // console.log(indicators)
-  //   // onCountryScoreChange(newCountryScores)
-  // }
-
-  // function sortedCountries(){
-  //   const countriesFinalScores = calculateWeightedScores()
-  //   return [...countriesFinalScores].sort((a,b) => {
-  //     return b.finalScore - a.finalScore
-  //   })
-  // }
-  
-  // function rankedCountries() {
-  //   let newSortedCountries = sortedCountries()
-  //   const newRankedCountries = newSortedCountries.map(
-  //     (country,index) => { 
-  //       return {
-  //       ...country,
-  //       rank: index + 1}
-  //     }
-  //   )
-  //   // console.log(indicators)
-  //   onCountryScoreChange(newRankedCountries)
-  // }
-
-  // useEffect(() => {rankedCountries()
-  // console.log("4th useeffect hit")},[indicators])
-
-  const countriesRef = useRef(countries);
+  const countriesRankingRef = useRef(countriesRanking);
 
   useEffect(() => {
-    countriesRef.current = countries;
-  }, [countries]);
+    countriesRankingRef.current = countriesRanking;
+  }, [countriesRanking]);
+
+  //ai solutions to fix problems of popup not showing correctly
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    if (popupPosition) {
+      mapRef.current.setMaxBounds(null); // Removes bounds
+    } else {
+      mapRef.current.setMaxBounds([[-40, -40], [40, 60]]); // Reapplies bounds
+    }
+  }, [popupPosition]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    const handlePopupClose = () => {
+      setPopupPosition(null);
+      setSelectedCountryData(null); // optional, depending on your logic
+    };
+
+    map.on('popupclose', handlePopupClose);
+
+    return () => {
+      map.off('popupclose', handlePopupClose); // clean up
+    };
+  }, [popupPosition]);
+
+
 
 
   useEffect(() => {
-    fetch('/geojson/africa_map.json')
+    fetch('/geojson/Africa.json')
       .then(response => {
         if (!response.ok) throw new Error(`Error loading GeoJSON: ${response.status}`);
         return response.json();
@@ -195,15 +80,15 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
   // Find centroid of a country by name
   const findCountryCentroid = (countryName) => {
     if (!geojsonData) return null;
-    
+
     const feature = geojsonData.features.find(f => {
-      const name = f.properties?.name || 
-                   f.properties?.NAME || 
-                   f.properties?.SOVEREIGNT || 
-                   f.properties?.merge_group;
+      const name = f.properties?.name ||
+        f.properties?.NAME ||
+        f.properties?.SOVEREIGNT ||
+        f.properties?.merge_group;
       return name === countryName;
     });
-    
+
     if (feature && feature.geometry) {
       // For Polygon
       if (feature.geometry.type === 'Polygon') {
@@ -234,13 +119,13 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
   useEffect(() => {
     if (selectedCountry && geojsonData) {
       // Utiliser les données les plus récentes (avec le rank et weightedScore actualisés)
-      const countryData = countries.find(c => c.countryName === selectedCountry);
+      const countryData = countriesRanking.find(c => c.countryName === selectedCountry);
       if (countryData) {
         const centroid = findCountryCentroid(selectedCountry);
         if (centroid) {
           setSelectedCountryData(countryData);
           setPopupPosition({ lat: centroid[0], lng: centroid[1] });
-          
+
           // Zoom to the country if we have a ref to the map
           if (mapRef.current) {
             mapRef.current.flyTo(centroid, 4);
@@ -248,12 +133,12 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
         }
       }
     }
-  }, [selectedCountry, countries, geojsonData]);
+  }, [selectedCountry, countriesRanking, geojsonData]);
 
   // Get color based on score
   const getColorByScore = (score) => {
     if (score === undefined) return '#cccccc'; // Default gray for unknown scores
-    
+
     if (colorScale === 'green-red') {
       if (score >= 80) return '#109618'; // Dark green
       if (score >= 60) return '#7fbd5a'; // Light green
@@ -273,26 +158,26 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
       if (score >= 20) return '#ff9800'; // Orange
       return '#ffeb3b'; // Yellow
     }
-    
+
     return '#cccccc'; // Default gray
   };
 
   const getGeoJSONStyle = (feature) => {
-    const countryName = 
-      feature.properties?.name || 
-      feature.properties?.NAME || 
-      feature.properties?.SOVEREIGNT || 
-      feature.properties?.merge_group || 
+    const countryName =
+      feature.properties?.name ||
+      feature.properties?.NAME ||
+      feature.properties?.SOVEREIGNT ||
+      feature.properties?.merge_group ||
       'Unknown country';
-    
-    // Find country data from rankedCountries to get the most up-to-date data
-    const countryData = countries.find(c => c.countryName === countryName);
-    
+
+    // Find country data from rankedcountriesRanking to get the most up-to-date data
+    const countryData = countriesRanking.find(c => c.countryName === countryName);
+
     // Utiliser directement weightedScore s'il existe, sinon calculer
-    const weightedScore = countryData ? 
-      countryData.finalScore: 
+    const weightedScore = countryData ?
+      countryData.finalScore :
       undefined;
-    
+
     if ((selectedCountryData && countryName === selectedCountryData.countryName) || (selectedCountry && countryName === selectedCountry)) {
       return {
         fillColor: '#ff6b6b',
@@ -301,7 +186,7 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
         fillOpacity: 1,
       };
     }
-    
+
     return {
       fillColor: weightedScore !== undefined ? getColorByScore(weightedScore) : '#1a1d62',
       weight: 1,
@@ -312,13 +197,13 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
   };
 
   const onEachFeature = (feature, layer) => {
-    const countryName = 
-      feature.properties?.name || 
-      feature.properties?.NAME || 
-      feature.properties?.SOVEREIGNT || 
-      feature.properties?.merge_group || 
+    const countryName =
+      feature.properties?.name ||
+      feature.properties?.NAME ||
+      feature.properties?.SOVEREIGNT ||
+      feature.properties?.merge_group ||
       'Unknown country';
-    
+
     layer.on({
       mouseover: (e) => {
         const layer = e.target;
@@ -327,23 +212,35 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
           weight: 2,
         });
         layer.bringToFront();
+        //add a tooltip on hover
+        const countryData = countriesRankingRef.current.find(
+          c => c.countryName === countryName
+        );
+        if(countryData){
+          layer.bindTooltip(
+            `<strong>Name: ${countryData.countryName}<br/>Rank: ${countryData.rank}<br/>Score: ${countryData.finalScore}</strong>`,
+            {
+              direction: 'top',
+              sticky: true,
+              opacity: 0.9,
+              // className: 'custom-tooltip', // optional for styling
+            }
+          ).openTooltip()
+        }
       },
       mouseout: (e) => {
         const layer = e.target;
-        
+
         // Utiliser la fonction getGeoJSONStyle pour avoir le style cohérent avec colorScale
-        layer.setStyle(getGeoJSONStyle(feature));
+        layer.setStyle(getGeoJSONStyle(feature)); //this is causing the red-orange color not to appear when country is selected because it's resetting country data to null
       },
       click: (e) => {
         // console.log("Country clicked:", countryName);
-      
-          const countryData = countriesRef.current.find(
-    c => c.countryName === countryName
-  );
-        // Utiliser rankedCountries pour avoir les données les plus récentes
-        // const countryData = countries.find(c => c.countryName === countryName);
-        // console.log(countryData)
-        
+
+        const countryData = countriesRankingRef.current.find(
+          c => c.countryName === countryName
+        );
+
         if (countryData) {
           setSelectedCountryData(countryData);
           setPopupPosition(e.latlng);
@@ -367,7 +264,7 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
     else if (score >= 40) color = 'bg-yellow-100 text-yellow-800';
     else if (score >= 20) color = 'bg-orange-100 text-orange-800';
     else color = 'bg-red-100 text-red-800';
-    
+
     return (
       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${color}`}>
         {score}
@@ -378,7 +275,7 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
   // Country popup content
   const CountryPopup = ({ country, indicators }) => {
     if (!country) return null;
-    
+
     // Display only criteria that are included in the weights object
     const criteriaTitles = {
       odin: 'ODIN Index (Open Data)',
@@ -397,11 +294,11 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
     // nous avons le bon score affiché
     // const globScore = Number(calculateWeightedScore(country.scores, weights).toFixed(1));
     const globScore = country.finalScore
-    
-    // Trouver le pays avec les données mises à jour dans rankedCountries
-    const updatedCountry = countries.find(c => c.countryName === country.countryName);
+
+    // Trouver le pays avec les données mises à jour dans rankedcountriesRanking
+    const updatedCountry = countriesRanking.find(c => c.countryName === country.countryName);
     const currentRank = updatedCountry ? updatedCountry.rank : country.rank;
-    
+
     return (
       <div className="country-popup" style={{ minWidth: '300px', maxWidth: '400px' }}>
         <div className="flex justify-between items-center mb-2">
@@ -425,9 +322,9 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
             </div>
           </div>
         </div>
-        
+
         <hr className="my-3" />
-        
+
         <div className="space-y-2">
           <h4 className="font-medium">Score Details</h4>
           {indicators && indicators.map(indicator => (
@@ -444,14 +341,14 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
             )
           ))}
         </div>
-        
+
         <div className="mt-4 pt-3 border-t border-gray-200">
           <div className="text-xs text-gray-500">
             Region: {country.countryName[1]}
           </div>
         </div>
-        
-        <button 
+
+        <button
           onClick={closePopup}
           className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
         >
@@ -467,9 +364,10 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
     return <div className="text-red-500 p-5">Error: {error}</div>;
   }
 
+  //changed height to 500 px  (also in map container), also zoom and min zoom to 3
   return (
     <div className="map-container relative z-0" style={{
-      height: '400px',
+      height: '500px',
       width: '100%',
       margin: '0 auto',
       position: 'relative',
@@ -478,30 +376,38 @@ const MapComponent = ({ selectedCountry, colorScale, indicators,  scores, countr
     }}>
       <MapContainer
         center={[5, 20]}
-        zoom={2}
+        zoom={3}
         style={{ width: '100%', height: '100%' }}
         zoomControl={false}
-        minZoom={2}
-        maxZoom={4}
+        minZoom={3}
+        maxZoom={6}
         maxBounds={[[-40, -40], [40, 60]]}
+        // maxBounds={popupPosition ? undefined : [[-40, -40], [40, 60]]}
+        // maxBounds={[[-40, -25], [40, 65]]}
         ref={mapRef}
         whenCreated={(map) => { mapRef.current = map; }}
       >
         <ZoomControl position="bottomright" />
-        <TileLayer
+        {/* <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap"
+        /> */}
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
+          attribution="&copy; OpenStreetMap &copy; CartoDB"
         />
+
         {geojsonData && (
           <GeoJSON
+            key={JSON.stringify([countriesRanking, colorScale])}  // temporary fix to year change to reflect on map and color problem because when we add this we force react to render the new component with the new values of state
             data={geojsonData}
             onEachFeature={onEachFeature}
             style={getGeoJSONStyle}
           />
         )}
-        
+
         {popupPosition && selectedCountryData && (
-          <Popup 
+          <Popup
             position={popupPosition}
             maxWidth={400}
             offset={[0, -10]}

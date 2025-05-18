@@ -1,32 +1,32 @@
-import { useRef, useEffect } from 'react';
-import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { useRef } from 'react';
+import { Legend, PolarAngleAxis, PolarGrid, PolarRadiusAxis, Radar, RadarChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { getColor } from './Data';
 
 export default function RadarChartDisplay({ chartData, countryData }) {
   // Référence pour le conteneur entier (incluant le titre et le logo)
   const containerRef = useRef(null);
-  
+
   // Télécharger le graphique complet en PNG
   const downloadChart = () => {
     if (typeof window !== 'undefined') {
       // Dynamiquement importer html2canvas
       import('html2canvas').then(html2canvas => {
         if (!containerRef.current) return;
-        
+
         const options = {
           backgroundColor: '#fff',
           scale: 2,
           logging: false,
           useCORS: true
         };
-        
+
         html2canvas.default(containerRef.current, options).then(canvas => {
           const link = document.createElement('a');
           let filename = 'comparaison';
           countryData.forEach(c => {
             filename += `-${c.countryName.toLowerCase()}`;
           });
-          
+
           link.download = `${filename}.png`;
           link.href = canvas.toDataURL('image/png');
           link.click();
@@ -44,8 +44,8 @@ export default function RadarChartDisplay({ chartData, countryData }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8" >
       <div className="flex justify-end mb-4">
-        
-        <button 
+
+        <button
           onClick={downloadChart}
           className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 flex items-center"
         >
@@ -63,21 +63,21 @@ export default function RadarChartDisplay({ chartData, countryData }) {
           <ResponsiveContainer width="100%" height="100%">
             <RadarChart data={chartData} margin={{ top: 20, right: 30, left: 30, bottom: 20 }}>
               <PolarGrid stroke="#ddd" strokeDasharray="4 4" />
-              <PolarAngleAxis 
-                dataKey="indicator" 
-                tick={{ fill: "#333", fontSize: 13, fontWeight: 'bold' }} 
+              <PolarAngleAxis
+                dataKey="indicator"
+                tick={{ fill: "#333", fontSize: 13, fontWeight: 'bold' }}
               />
-              <PolarRadiusAxis 
-                domain={[0, 100]} 
-                tick={{ fill: "#666", fontSize: 11 }} 
+              <PolarRadiusAxis
+                domain={[0, 100]}
+                tick={{ fill: "#666", fontSize: 11 }}
               />
-              <Tooltip 
+              <Tooltip
                 contentStyle={{ backgroundColor: "#f9f9f9", borderRadius: 10 }}
               />
-              <Legend 
-                layout="horizontal" 
-                verticalAlign="top" 
-                align="center" 
+              <Legend
+                layout="horizontal"
+                verticalAlign="top"
+                align="center"
                 wrapperStyle={{ fontSize: 13 }}
               />
               {countryData.map((country, index) => (

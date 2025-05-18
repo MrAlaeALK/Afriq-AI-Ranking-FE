@@ -1,4 +1,3 @@
-import React from 'react';
 
 const CriterionCard = ({ icon, title, description, bgColor, textColor }) => {
   return (

@@ -1,8 +1,8 @@
 import { getCountryGroups } from './Data';
 
-export default function CountrySelector({ selectedCountries, onCountryChange, countries }) {
-  const countryGroups = getCountryGroups(countries);
-  
+export default function CountrySelector({ selectedCountries, onCountryChange, countriesRanking }) {
+  const countryGroups = getCountryGroups(countriesRanking);
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
       <h2 className="text-xl font-semibold mb-4">Sélection des pays</h2>

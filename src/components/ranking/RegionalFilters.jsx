@@ -1,5 +1,4 @@
 // components/ranking/RegionalFilters.js (continuation)
-import React from 'react';
 
 const RegionalFilters = ({ activeRegion, setActiveRegion }) => {
   const regions = [
@@ -16,11 +15,10 @@ const RegionalFilters = ({ activeRegion, setActiveRegion }) => {
       {regions.map(region => (
         <button
           key={region.id}
-          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${
-            activeRegion === region.id 
-              ? 'bg-purple-600 text-white' 
+          className={`px-3 py-1.5 text-sm font-medium rounded-lg transition-colors ${activeRegion === region.id
+              ? 'bg-purple-600 text-white'
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-          }`}
+            }`}
           onClick={() => setActiveRegion(region.id)}
         >
           {region.name}

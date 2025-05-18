@@ -1,29 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState, useContext } from 'react';
+import {CountriesRankingContext} from '../context/CountriesRankingContext'
 
 // Importation des composants
-import CriteriaSelector from '../compare/CriteriaSelector';
-import CountrySelector from '../compare/CountrySelector';
-import RadarChartDisplay from '../compare/RadarChartDisplay';
-import CountryCardList from '../compare/CountryCardList';
-import { data, criteriaLabels } from '../compare/Data';
+import CountryCardList from '../components/compare/CountryCardList';
+import CountrySelector from '../components/compare/CountrySelector';
+import CriteriaSelector from '../components/compare/CriteriaSelector';
+import RadarChartDisplay from '../components/compare/RadarChartDisplay';
+import { IndicatorContext } from '../context/IndicatorContext';
+import { ScoresContext } from '../context/ScoresContext';
+import { YearContext } from '../context/YearContext';
 
-export default function ComparisonPage({countries, scores, defaultWeights, defaultFinalScores, setCountries}) {
-  console.log(defaultWeights)
-  console.log("comparison page rendered")
+export default function ComparisonPage() {
+  const { year, setYear } = useContext(YearContext)
+  const { countriesRanking, setCountriesRanking, countriesRankingError } = useContext(CountriesRankingContext);
+  const { scores, setScores, scoresError } = useContext(ScoresContext)
+  const { indicators, setIndicators, defaultIndicators, indicatorsError } = useContext(IndicatorContext)
+  // const [yearIndicators, setYearIndicators] = useState([])
   // État pour stocker les pays sélectionnés
-  const [selectedCountries, setSelectedCountries] = useState([null, null, null, null, null]);
+  const [selectedCountries, setselectedCountries] = useState([null, null, null, null, null]);
   // État pour stocker les critères sélectionnés
   const [selectedCriteria, setSelectedCriteria] = useState({});
-
-  useEffect(() => {
-    const defaultSelectedCriteria = defaultWeights.reduce((indicatorsObject, indicator, index) => {
-    indicatorsObject[indicator.name] = (index > 3 ? false : true)
-    return indicatorsObject
-  },{})
-  setSelectedCriteria(defaultSelectedCriteria)
-  },[defaultWeights])
-
-  console.log(selectedCriteria)
   // Compteur de critères sélectionnés
   const [criteriaCount, setCriteriaCount] = useState(3);
   // Données pour le graphique
@@ -31,25 +27,39 @@ export default function ComparisonPage({countries, scores, defaultWeights, defau
   // Données pour chaque pays
   const [countryData, setCountryData] = useState([]);
 
+  // useEffect(() => {
+  //   const indicatorsOfYearX = defaultIndicators.filter(indicator => scores.some(score => score.indicatorName === indicator.name));
+  //   setYearIndicators(indicatorsOfYearX)
+  // }, [defaultIndicators, scores])
+
+  useEffect(() => {
+    const defaultSelectedCriteria = defaultIndicators.reduce((indicatorsObject, indicator, index) => {
+      indicatorsObject[indicator.name] = (index > 3 ? false : true)
+      return indicatorsObject
+    }, {})
+
+    setSelectedCriteria(defaultSelectedCriteria)
+  }, [defaultIndicators])
+
   // Mise à jour des données du graphique lorsque les pays ou critères sélectionnés changent
   useEffect(() => {
     // Variables pour stocker les données formatées
     const newChartData = [];
     const newCountryData = [];
-    
+
     // Obtenir tous les indicateurs disponibles
     const indicators = Object.keys(selectedCriteria).filter(key => selectedCriteria[key]);
-    
+
     // Créer un objet pour chaque indicateur avec les valeurs de chaque pays
     indicators.forEach(indicator => {
       const dataPoint = {
-        indicator:  indicator,
+        indicator: indicator,
       };
-      
+
       // Ajouter les données de chaque pays sélectionné
       selectedCountries.forEach((countryId) => {
         if (countryId) {
-          const country = countries.find(c => c.countryId === countryId);
+          const country = countriesRanking.find(c => c.countryId === countryId);
           if (country) {
             // Ajouter le pays à la liste des pays s'il n'y est pas déjà
             if (!newCountryData.find(c => c.countryId === country.countryId)) {
@@ -60,42 +70,42 @@ export default function ComparisonPage({countries, scores, defaultWeights, defau
           }
         }
       });
-      
+
       // N'ajouter le point que s'il y a au moins un pays sélectionné
       if (Object.keys(dataPoint).length > 1) {
         newChartData.push(dataPoint);
       }
     });
-    
+
     setChartData(newChartData);
     setCountryData(newCountryData);
   }, [selectedCountries, selectedCriteria]);
 
   // Gérer le changement de pays
   const handleCountryChange = (index, countryId) => {
-    const newSelectedCountries = [...selectedCountries];
-    newSelectedCountries[index] = countryId ? parseInt(countryId) : null;
-    setSelectedCountries(newSelectedCountries);
+    const newselectedCountries = [...selectedCountries];
+    newselectedCountries[index] = countryId ? parseInt(countryId) : null;
+    setselectedCountries(newselectedCountries);
   };
-  
+
   // Gérer le changement de critères
   const handleCriteriaChange = (criterion) => {
     // Calculer le nouveau nombre de critères sélectionnés
-    const newCount = selectedCriteria[criterion] 
-      ? criteriaCount - 1 
+    const newCount = selectedCriteria[criterion]
+      ? criteriaCount - 1
       : criteriaCount + 1;
-    
+
     // Vérifier si la déselection laisserait moins de 3 critères
     if (selectedCriteria[criterion] && newCount < 3) {
       alert("Vous devez sélectionner au moins 3 critères pour le graphique radar.");
       return;
     }
-    
+
     setSelectedCriteria({
       ...selectedCriteria,
       [criterion]: !selectedCriteria[criterion]
     });
-    
+
     setCriteriaCount(newCount);
   };
 
@@ -111,20 +121,25 @@ export default function ComparisonPage({countries, scores, defaultWeights, defau
             </p>
           </div>
         </section>
-            
+
+        <select value={year} onChange={e => setYear(parseInt(e.target.value))}>
+          <option value="2021">2021</option>
+          <option value="2020">2020</option>
+        </select>
+
         {/* Sélection des critères */}
-        <CriteriaSelector 
+        <CriteriaSelector
           selectedCriteria={selectedCriteria}
           criteriaCount={criteriaCount}
           onCriteriaChange={handleCriteriaChange}
-          defaultWeights={defaultWeights}
+          defaultIndicators={defaultIndicators}
         />
-        
+
         {/* Sélection des pays */}
-        <CountrySelector 
+        <CountrySelector
           selectedCountries={selectedCountries}
           onCountryChange={handleCountryChange}
-          countries={countries}
+          countriesRanking={countriesRanking}
         />
 
         {/* Conteneur pour CardList (gauche) et RadarChart (droite) */}
@@ -133,19 +148,19 @@ export default function ComparisonPage({countries, scores, defaultWeights, defau
             <div className="flex flex-col lg:flex-row gap-8">
               {/* Cartes des pays (gauche) */}
               <div className="w-full lg:w-1/2">
-                <CountryCardList 
-                  countryData={countryData} 
-                  selectedCriteria={selectedCriteria} 
-                  scores = {scores}
+                <CountryCardList
+                  countryData={countryData}
+                  selectedCriteria={selectedCriteria}
+                  scores={scores}
                 />
               </div>
-              
+
               {/* Graphique de comparaison (droite) */}
               <div className="w-full lg:w-1/2">
                 {chartData.length > 0 && criteriaCount >= 3 ? (
-                  <RadarChartDisplay 
-                    chartData={chartData} 
-                    countryData={countryData} 
+                  <RadarChartDisplay
+                    chartData={chartData}
+                    countryData={countryData}
                   />
                 ) : (
                   <div className="text-center p-8 bg-gray-100 rounded-lg">

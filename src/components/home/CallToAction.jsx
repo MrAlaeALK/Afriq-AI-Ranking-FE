@@ -1,5 +1,4 @@
 // components/CallToAction.js
-import React from 'react';
 
 const CallToAction = () => {
   return (

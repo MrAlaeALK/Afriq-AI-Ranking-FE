@@ -1,12 +1,16 @@
-import React, { useState } from "react"; // <- useState ajouté ici
+import { useState, useContext } from "react"; // <- useState ajouté ici
 import CriterionCard from "./CriterionCard";
+import { IndicatorContext } from "../../context/IndicatorContext";
 
-const Criteria = ({indicators}) => {
+const Criteria = () => {
+  const {defaultIndicators} = useContext(IndicatorContext);
   const [expanded, setExpanded] = useState(false);
 
   const toggleText = () => {
     setExpanded(!expanded);
   };
+
+  // kept it here in case we need it later 
 
   // const criteriaData = [
   //   {
@@ -50,10 +54,10 @@ const Criteria = ({indicators}) => {
     <section className="py-16 bg-white">
       <div className="container mx-auto px-4">
         <h3 className="text-2xl md:text-3xl font-bold text-center mb-12">Nos critères d'évaluation</h3>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {indicators.filter((indicator,index) => index < 3).map((indicator, index) => (
-            <CriterionCard 
+          {defaultIndicators.filter((indicator, index) => index < 3).map((indicator, index) => (
+            <CriterionCard
               key={indicator.id}
               icon={indicator.id}
               title={indicator.name}
@@ -68,8 +72,8 @@ const Criteria = ({indicators}) => {
           <>
             <br />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {indicators.filter((indicator, index) => index >= 3).map((indicator, index) => (
-                <CriterionCard 
+              {defaultIndicators.filter((indicator, index) => index >= 3).map((indicator, index) => (
+                <CriterionCard
                   key={`expanded-${indicator.id}`}
                   icon={indicator.id}
                   title={indicator.name}

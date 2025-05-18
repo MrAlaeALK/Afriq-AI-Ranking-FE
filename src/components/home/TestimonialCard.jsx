@@ -1,4 +1,3 @@
-import React from 'react';
 
 const TestimonialCard = ({ avatar, name, title, quote, bgColor }) => {
   return (
