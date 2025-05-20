@@ -17,8 +17,8 @@ export const IndicatorProvider = ({children}) => {
     const fetchAllIndicators = async () => await getAllIndicators()
         .then(res => {
             if(res.status==='success'){
-                setDefaultIndicators(res.message)
-                const IndicatorsOfYearX = defaultIndicators.filter(indicator => scores.some(score => score.indicatorName === indicator.name));
+                setDefaultIndicators(res.data)
+                const IndicatorsOfYearX = defaultIndicators.filter(indicator => scores.some(score => score.dimensionName === indicator.name));
                 setIndicators(IndicatorsOfYearX)
             }
             else{

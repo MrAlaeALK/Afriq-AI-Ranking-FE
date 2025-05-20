@@ -2,12 +2,14 @@ import { useEffect, useMemo, useContext } from 'react';
 import {IndicatorContext} from '../../context/IndicatorContext'
 import {CountriesRankingContext} from '../../context/CountriesRankingContext'
 import {ScoresContext} from '../../context/ScoresContext';
+import { YearContext } from '../../context/YearContext';
 
 function FilterPanel() {
 
     const {indicators, setIndicators, defaultIndicators} = useContext(IndicatorContext)
     const {countriesRanking, setCountriesRanking} = useContext(CountriesRankingContext)
     const {scores} = useContext(ScoresContext)
+    const {year} = useContext(YearContext)
 
   const resetFilters = () => {
     setIndicators(defaultIndicators);
@@ -35,11 +37,16 @@ function FilterPanel() {
   };
 
   const handleWeightChange = (id, weight) => {
-
-    const newWeights = indicators.map(
-      indicator => indicator.id === id ? { ...indicator, weight: weight } : indicator
+    const newWeights = indicators.find(indicator => indicator.id === id).weights.map(weighted => weighted.year ===  year?
+      {...weighted, dimensionWeight: weight} : weighted
     )
-    setIndicators(newWeights)
+    // const newWeight = {...currentWeight, dimensionWeight: weight}
+
+    const newIndicators = indicators.map(
+      indicator => indicator.id === id ? 
+        { ...indicator, weights: newWeights } : indicator
+  )
+    setIndicators(newIndicators)
 
   }
 
@@ -52,7 +59,7 @@ function FilterPanel() {
   function calculateWeightedScores() {
     return countriesRanking.map(country => {
       const countryScores = scores.filter(score => score.countryName === country.countryName).reduce((countryScores, score) => {
-        countryScores[score.indicatorName] = score.score
+        countryScores[score.dimensionName] = score.score
         return countryScores;
       }, {})
 
@@ -61,8 +68,8 @@ function FilterPanel() {
 
       indicators.forEach(indicator => {
         if (countryScores[indicator.name] !== undefined) {
-          weightedScore += countryScores[indicator.name] * indicator.weight;
-          totalWeights += indicator.weight;
+          weightedScore += countryScores[indicator.name] * indicator.weights.find(weight => weight.year === year).dimensionWeight;
+          totalWeights += indicator.weights.find(weight => weight.year === year).dimensionWeight;
         }
       })
       return {
@@ -146,7 +153,7 @@ function FilterPanel() {
                   <span className="ml-2 text-sm font-medium text-gray-700">{indicator.name}</span>
                 </div>
                 <div className="flex items-center">
-                  <span className="text-sm font-medium mr-2">{indicator.weight}</span>
+                  <span className="text-sm font-medium mr-2">{indicator.weights.find(weight => weight.year === year).dimensionWeight}</span>
                   <button
                     onClick={() => handleRemoveCriteria(indicator.id)}
                     className="p-1 text-gray-400 hover:text-red-500 transition-colors"
@@ -162,7 +169,7 @@ function FilterPanel() {
                 type="range"
                 min="0"
                 max="10"
-                value={indicator.weight}
+                value={indicator.weights.find(weight => weight.year === year).dimensionWeight}
                 onChange={(e) => handleWeightChange(indicator.id, parseInt(e.target.value))}
                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
               />

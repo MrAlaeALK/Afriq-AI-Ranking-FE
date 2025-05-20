@@ -15,7 +15,7 @@ export const ScoresProvider = ({ children }) => {
         const fetchScoresByYear = async () => await getScoresByYear(year)
             .then(res => {
                 if (res.status === "success") {
-                    setScores(res.message)
+                    setScores(res.data)
                 }
                 else {
                     setScoresError(res.message)

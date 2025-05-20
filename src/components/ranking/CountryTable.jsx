@@ -142,10 +142,10 @@ const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySe
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
                       <div
                         className={`${criteriaColors[indicator.name]?.bar || 'bg-gray-500'} h-2.5 rounded-full`}
-                        style={{ width: `${scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0}%` }}
+                        style={{ width: `${scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score || 0}%` }}
                       ></div>
                     </div>
-                    <span>{scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0}</span>
+                    <span>{scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score || 0}</span>
                   </div>
                 </td>
               ))}

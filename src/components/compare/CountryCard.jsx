@@ -17,8 +17,8 @@ export default function CountryCard({ country, index, selectedCriteria }) {
       <div className="p-4">
         <div className="space-y-3">
           {Object.entries(scores
-            .filter(score => score.countryName === country.countryName && selectedCriteria[score.indicatorName]).reduce((scoresObject, score) => {
-              scoresObject[score.indicatorName] = score.score
+            .filter(score => score.countryName === country.countryName && selectedCriteria[score.dimensionName]).reduce((scoresObject, score) => {
+              scoresObject[score.dimensionName] = score.score
               return scoresObject
             }, {}))
             .map(([key, value]) => (

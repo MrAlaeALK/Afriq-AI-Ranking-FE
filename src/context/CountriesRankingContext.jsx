@@ -15,7 +15,7 @@ export const CountriesRankingProvider = ({ children }) => {
         const fetchCountriesRanking = async () => await getRankingByYear(year)
             .then(res => {
                 if (res.status === 'success') {
-                    setCountriesRanking(res.message)
+                    setCountriesRanking(res.data)
                 }
                 else {
                     setCountriesRankingError(res.message)

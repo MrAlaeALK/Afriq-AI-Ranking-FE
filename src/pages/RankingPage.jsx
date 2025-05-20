@@ -50,8 +50,8 @@ const RankingPage = () => {
           aValue = a[sortConfig.key];
           bValue = b[sortConfig.key];
         } else {
-          aValue = scores.find(score => score.countryName === a.countryName && score.indicatorName === sortConfig.key).score || 0;
-          bValue = scores.find(score => score.countryName === b.countryName && score.indicatorName === sortConfig.key).score || 0;
+          aValue = scores.find(score => score.countryName === a.countryName && score.dimensionName === sortConfig.key).score || 0;
+          bValue = scores.find(score => score.countryName === b.countryName && score.dimensionName === sortConfig.key).score || 0;
         }
 
         if (aValue < bValue) {

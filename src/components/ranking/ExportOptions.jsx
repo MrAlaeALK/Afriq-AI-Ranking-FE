@@ -34,7 +34,7 @@ const ExportOptions = ({ filteredCountriesRanking }) => {
         country.finalScore || country.scores.global,
       ];
       const dynamicData = indicators.map(indicator =>
-        scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score !== undefined ? scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score : ''
+        scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score !== undefined ? scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score : ''
       );
       return [...staticData, ...dynamicData];
     });

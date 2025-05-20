@@ -65,7 +65,7 @@ const RankingCharts = ({ selectedCountries }) => {
 
     // Ajouter les scores pour chaque critère sélectionné
     indicators.forEach(indicator => {
-      data[getCriteriaLabel(indicator)] = scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score || 0;
+      data[getCriteriaLabel(indicator)] = scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score || 0;
     });
 
     return data;
@@ -104,7 +104,7 @@ const RankingCharts = ({ selectedCountries }) => {
         <div className="flex flex-wrap gap-2">
           {selectedCountriesData.map(country => (
             <div
-              key={country.id}
+              key={country.countryId}
               className="flex items-center px-3 py-1 bg-purple-100 text-purple-800 rounded-full"
             >
               <span className="mr-2">{country.countryName[0]}</span>

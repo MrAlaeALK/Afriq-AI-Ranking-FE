@@ -333,9 +333,9 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
                 <div className="text-sm text-gray-600">{indicator.name} :</div>
                 <div className="flex items-center">
                   <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score}%` }}></div>
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score}%` }}></div>
                   </div>
-                  <ScoreBadge score={scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator.name).score} />
+                  <ScoreBadge score={scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score} />
                 </div>
               </div>
             )

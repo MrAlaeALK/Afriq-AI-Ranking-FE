@@ -28,7 +28,7 @@ export default function ComparisonPage() {
   const [countryData, setCountryData] = useState([]);
 
   // useEffect(() => {
-  //   const indicatorsOfYearX = defaultIndicators.filter(indicator => scores.some(score => score.indicatorName === indicator.name));
+  //   const indicatorsOfYearX = defaultIndicators.filter(indicator => scores.some(score => score.dimensionName === indicator.name));
   //   setYearIndicators(indicatorsOfYearX)
   // }, [defaultIndicators, scores])
 
@@ -66,7 +66,7 @@ export default function ComparisonPage() {
               newCountryData.push(country);
             }
             // Ajouter la valeur de l'indicateur pour ce pays
-            dataPoint[`${country.countryName[0]} ${country.countryName}`] = scores.find(score => score.countryName === country.countryName && score.indicatorName === indicator).score;
+            dataPoint[`${country.countryName[0]} ${country.countryName}`] = scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator).score;
           }
         }
       });
