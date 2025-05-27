@@ -26,7 +26,7 @@ function CountryRanking({ colorScale = 'green-red' }) {
               </tr>
             </thead>
             <tbody>
-              {countriesRanking.slice(0, 9).map((country) => (
+              {countriesRanking.slice(0, 10).map((country) => (
                 <CountryRow key={country.countryName} country={country} colorScale={colorScale} />
               ))}
             </tbody>
@@ -74,8 +74,12 @@ function CountryRow({ country, colorScale }) {
   return (
     <tr className="hover:bg-gray-50">
       <td className="py-3 text-gray-800">{country.rank}</td>
-      <td className="py-3 text-gray-800">
-        <span className="mr-2">{country.countryName[0]}</span>
+      <td className="py-3 text-gray-800 flex items-center">
+        <img
+          src={`/public/flags/${country.countryCode}.svg`}
+          alt={`${country.countryName} flag`}
+          className="w-10 h-10 mr-2"
+        />
         {country.countryName}
       </td>
       <td className="py-3 text-right font-medium" style={{ color: getColorByScore(Number(country.finalScore)) }}>

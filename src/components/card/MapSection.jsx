@@ -5,7 +5,7 @@ import FilterPanel from './FilterPanel';
 import MapContainer from './MapContainer';
 import RegionalTrends from './RegionalTrends';
 
-function MapSection({ indicators, setIndicators, countriesRanking, setCountriesRanking, defaultIndicators, setdefaultIndicators, scores, setScores }) {
+function MapSection({ yearDimensions, setYearDimensions, countriesRanking, setCountriesRanking, dimensions, setDimensions, scores, setScores }) {
 
   const [colorScale, setColorScale] = useState('green-red');
   const [selectedCountry, setSelectedCountry] = useState(null);
@@ -18,9 +18,9 @@ function MapSection({ indicators, setIndicators, countriesRanking, setCountriesR
           {/* Colonne de gauche avec filtres et options */}
           <div className="w-full lg:w-1/4">
             <FilterPanel 
-              onWeightsChange={setIndicators} 
-              defaultIndicators={defaultIndicators} 
-              indicators={indicators} 
+              onWeightsChange={setYearDimensions} 
+              dimensions={dimensions} 
+              yearDimensions={yearDimensions} 
               countriesRanking={countriesRanking} 
               setCountriesRanking={setCountriesRanking} 
               scores={scores} 
@@ -33,7 +33,7 @@ function MapSection({ indicators, setIndicators, countriesRanking, setCountriesR
             <div className="flex flex-col xl:flex-row gap-6">
               <MapContainer
                 colorScale={colorScale}
-                indicators={indicators}
+                yearDimensions={yearDimensions}
                 selectedCountry={selectedCountry}
                 onCountrySelect={setSelectedCountry}
                 scores={scores}
@@ -42,7 +42,7 @@ function MapSection({ indicators, setIndicators, countriesRanking, setCountriesR
               />
               <CountryRanking
                 colorScale={colorScale}
-                indicators={indicators}
+                yearDimensions={yearDimensions}
                 selectedCountry={selectedCountry}
                 onCountrySelect={setSelectedCountry}
                 countriesRanking={countriesRanking}

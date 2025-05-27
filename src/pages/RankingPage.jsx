@@ -4,12 +4,14 @@ import CountryTable from '../components/ranking/CountryTable';
 import ExportOptions from '../components/ranking/ExportOptions';
 import RankingCharts from '../components/ranking/RankingCharts';
 import RegionalFilters from '../components/ranking/RegionalFilters';
-import {IndicatorContext} from '../context/IndicatorContext'
+import {DimensionContext} from '../context/DimensionContext'
 import {CountriesRankingContext} from '../context/CountriesRankingContext'
 import {ScoresContext} from '../context/ScoresContext';
+import { YearDimensionContext } from '../context/YearDimensionContext';
 
 const RankingPage = () => {
-  const {indicators, setIndicators, defaultIndicators} = useContext(IndicatorContext)
+  const {dimensions} = useContext(DimensionContext)
+  const {yearDimensions, setYearDimensions, defaultYearDimensions} = useContext(YearDimensionContext)
   const {countriesRanking, setCountriesRanking} = useContext(CountriesRankingContext)
   const {scores, setScores} = useContext(ScoresContext)
   const [filteredCountriesRanking, setfilteredCountriesRanking] = useState([]);
@@ -18,13 +20,19 @@ const RankingPage = () => {
   const [activeRegion, setActiveRegion] = useState('all');
   const [sortConfig, setSortConfig] = useState({ key: 'rank', direction: 'ascending' });
 
+  //reset when we switch to this page if we want 
+  // useEffect(() => {
+  //   // setCountriesRanking(defaultFinalScores)
+  //   setYearDimensions(defaultYearDimensions)
+  // }, [defaultYearDimensions])
+
   // Fonctions de filtrage et de tri
   useEffect(() => {
     let result = [...countriesRanking];
 
     // Filtrage par région
     if (activeRegion !== 'all') {
-      result = result.filter(country => country.region === activeRegion);
+      result = result.filter(country => country.countryRegion === activeRegion);
     }
 
     // Filtrage par recherche
@@ -65,7 +73,7 @@ const RankingPage = () => {
     }
 
     setfilteredCountriesRanking(result);
-  }, [countriesRanking, activeRegion, searchQuery, sortConfig, indicators]);
+  }, [countriesRanking, activeRegion, searchQuery, sortConfig, yearDimensions]);
 
   // Gestion du tri
   const requestSort = (key) => {
@@ -143,7 +151,7 @@ const RankingPage = () => {
 
               <ExportOptions 
                 filteredCountriesRanking={filteredCountriesRanking} 
-                indicators={indicators} 
+                yearDimensions={yearDimensions} 
                 scores={scores} 
               />
             </div>
@@ -153,7 +161,7 @@ const RankingPage = () => {
               onCountrySelect={handleCountrySelection}
               requestSort={requestSort}
               sortConfig={sortConfig}
-              indicators={indicators} // Passer les poids au tableau
+              yearDimensions={yearDimensions} // Passer les poids au tableau
               scores={scores}
             />
           </div>
@@ -163,16 +171,16 @@ const RankingPage = () => {
               <RankingCharts
                 countriesRanking={countriesRanking}
                 selectedCountries={selectedCountries}
-                indicators={indicators} // Passer les poids aux graphiques
+                yearDimensions={yearDimensions} // Passer les poids aux graphiques
                 scores={scores}
               />
             </div>
 
             <div className="lg:col-span-1">
               <FilterPanel 
-                onWeightsChange={setIndicators}
-                defaultIndicators={defaultIndicators}
-                indicators={indicators} 
+                onWeightsChange={setYearDimensions}
+                dimensions={dimensions}
+                yearDimensions={yearDimensions} 
                 scores={scores}
                 countriesRanking={countriesRanking}
                 onCountryScoreChange={setCountriesRanking} 

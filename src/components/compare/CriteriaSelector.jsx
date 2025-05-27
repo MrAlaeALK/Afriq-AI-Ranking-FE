@@ -1,21 +1,21 @@
 
-export default function CriteriaSelector({ selectedCriteria, criteriaCount, onCriteriaChange, defaultIndicators }) {
+export default function CriteriaSelector({ selectedCriteria, criteriaCount, onCriteriaChange, defaultYearDimensions }) {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8">
       <h2 className="text-xl font-semibold mb-4">Sélection des critères</h2>
       <p className="text-sm text-gray-600 mb-4">Sélectionnez au moins 3 critères pour la comparaison</p>
 
       <div className="flex flex-wrap gap-y-2 gap-x-6 mb-4">
-        {defaultIndicators.map(indicator => (
+        {defaultYearDimensions.map(dimension => (
           <button
-            key={indicator.id}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${selectedCriteria[indicator.name]
+            key={dimension.id}
+            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${selectedCriteria[dimension.name]
                 ? 'bg-purple-600 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
-            onClick={() => onCriteriaChange(indicator.name)}
+            onClick={() => onCriteriaChange(dimension.name)}
           >
-            {indicator.name}
+            {dimension.name}
           </button>
         ))}
       </div>

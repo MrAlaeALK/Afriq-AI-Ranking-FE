@@ -1,10 +1,11 @@
-import { IndicatorContext } from "../../context/IndicatorContext";
+import { DimensionContext } from "../../context/DimensionContext";
 import { ScoresContext } from "../../context/ScoresContext";
 import { useContext } from "react";
+import { YearDimensionContext } from "../../context/YearDimensionContext";
 
 const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySelect, requestSort, sortConfig  }) => {
 
-  const {indicators} = useContext(IndicatorContext);
+  const {yearDimensions} = useContext(YearDimensionContext);
   const {scores} = useContext(ScoresContext);
   
   const getClassNamesFor = (name) => {
@@ -15,17 +16,23 @@ const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySe
   };
 
   // Map des couleurs pour chaque critère
-  const criteriaColors = {
-    odin: { bg: 'bg-purple-100', text: 'text-purple-800', bar: 'bg-purple-600' },
-    hdi: { bg: 'bg-green-100', text: 'text-green-800', bar: 'bg-green-500' },
-    internet: { bg: 'bg-blue-100', text: 'text-blue-800', bar: 'bg-blue-500' },
-    education: { bg: 'bg-yellow-100', text: 'text-yellow-800', bar: 'bg-yellow-500' },
-    gdp: { bg: 'bg-red-100', text: 'text-red-800', bar: 'bg-red-500' },
-    innovation: { bg: 'bg-indigo-100', text: 'text-indigo-800', bar: 'bg-indigo-500' },
-    governance: { bg: 'bg-pink-100', text: 'text-pink-800', bar: 'bg-pink-500' },
-    health: { bg: 'bg-teal-100', text: 'text-teal-800', bar: 'bg-teal-500' },
-    environment: { bg: 'bg-emerald-100', text: 'text-emerald-800', bar: 'bg-emerald-500' }
-  };
+  const criteriaColors = [
+    { bg: 'bg-green-100', text: 'text-green-800', bar: 'bg-green-500' },
+    { bg: 'bg-blue-100', text: 'text-blue-800', bar: 'bg-blue-500' },
+    { bg: 'bg-yellow-100', text: 'text-yellow-800', bar: 'bg-yellow-500' },
+    { bg: 'bg-red-100', text: 'text-red-800', bar: 'bg-red-500' },
+    { bg: 'bg-indigo-100', text: 'text-indigo-800', bar: 'bg-indigo-500' },
+    { bg: 'bg-pink-100', text: 'text-pink-800', bar: 'bg-pink-500' },
+    { bg: 'bg-teal-100', text: 'text-teal-800', bar: 'bg-teal-500' },
+    { bg: 'bg-emerald-100', text: 'text-emerald-800', bar: 'bg-emerald-500' },
+    { bg: 'bg-purple-100', text: 'text-purple-800', bar: 'bg-purple-600' }
+  ];
+
+const getCriteriaColor = (dimension, dimensionsList) => {
+  const index = dimensionsList.indexOf(dimension);
+  if (index === -1) return '#6b7280'; // default gray
+  return criteriaColors[index % criteriaColors.length];
+};
 
   // Labels pour les critères
   const criteriaLabels = {
@@ -82,18 +89,18 @@ const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySe
             </th>
 
             {/* Colonnes dynamiques basées sur les poids sélectionnés */}
-            {indicators.map(indicator => (
+            {yearDimensions.map(dimension => (
               <th
-                key={indicator.id}
+                key={dimension.id}
                 className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
-                onClick={() => requestSort(indicator.name)}
+                onClick={() => requestSort(dimension.name)}
               >
                 <div className="flex items-center">
-                  <span className={`${criteriaColors[indicator.name]?.bg || 'bg-gray-100'} ${criteriaColors[indicator.name]?.text || 'text-gray-800'} px-2 py-1 rounded`}>
-                    {criteriaLabels[indicator] || indicator.name.toUpperCase()}
+                  <span className={`${getCriteriaColor(dimension, yearDimensions).bg || 'gray-100'} ${getCriteriaColor(dimension, yearDimensions).text || 'text-gray-800'} px-2 py-1 rounded`}>
+                    {criteriaLabels[dimension] || dimension.name.toUpperCase()}
                   </span>
                   <span className="ml-1">
-                    {getClassNamesFor(indicator.name) === 'ascending' ? '↑' : getClassNamesFor(indicator.name) === 'descending' ? '↓' : '↕'}
+                    {getClassNamesFor(dimension.name) === 'ascending' ? '↑' : getClassNamesFor(dimension.name) === 'descending' ? '↓' : '↕'}
                   </span>
                 </div>
               </th>
@@ -117,8 +124,12 @@ const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySe
               <td className="py-3 px-4 font-medium">
                 {country.rank}
               </td>
-              <td className="py-3 px-4 text-2xl">
-                {country.countryName[0]}
+              <td className="py-3 px-4 min-w-[100px] ">
+                <img
+                  src={`/public/flags/${country.countryCode}.svg`}
+                  alt={`${country.countryName} flag`}
+                  className="w-10 h-10 object-contain"
+                />
               </td>
               <td className="py-3 px-4 font-medium">
                 {country.countryName}
@@ -136,16 +147,16 @@ const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySe
               </td>
 
               {/* Cellules dynamiques basées sur les poids sélectionnés */}
-              {indicators.map(indicator => (
-                <td key={indicator.id} className="py-3 px-4">
+              {yearDimensions.map(dimension => (
+                <td key={dimension.id} className="py-3 px-4">
                   <div className="flex items-center">
                     <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
                       <div
-                        className={`${criteriaColors[indicator.name]?.bar || 'bg-gray-500'} h-2.5 rounded-full`}
-                        style={{ width: `${scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score || 0}%` }}
+                        className={`${getCriteriaColor(dimension, yearDimensions).bar || 'bg-gray-500'} h-2.5 rounded-full`}
+                        style={{ width: `${scores.find(score => score.countryName === country.countryName && score.dimensionName === dimension.name).score || 0}%` }}
                       ></div>
                     </div>
-                    <span>{scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score || 0}</span>
+                    <span>{scores.find(score => score.countryName === country.countryName && score.dimensionName === dimension.name).score.toFixed(2) || 0}</span>
                   </div>
                 </td>
               ))}

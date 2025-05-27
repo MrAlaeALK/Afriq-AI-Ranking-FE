@@ -6,15 +6,17 @@ import CountryCardList from '../components/compare/CountryCardList';
 import CountrySelector from '../components/compare/CountrySelector';
 import CriteriaSelector from '../components/compare/CriteriaSelector';
 import RadarChartDisplay from '../components/compare/RadarChartDisplay';
-import { IndicatorContext } from '../context/IndicatorContext';
+import { DimensionContext } from '../context/DimensionContext';
 import { ScoresContext } from '../context/ScoresContext';
 import { YearContext } from '../context/YearContext';
+import { YearDimensionContext } from '../context/YearDimensionContext'
 
 export default function ComparisonPage() {
   const { year, setYear } = useContext(YearContext)
   const { countriesRanking, setCountriesRanking, countriesRankingError } = useContext(CountriesRankingContext);
   const { scores, setScores, scoresError } = useContext(ScoresContext)
-  const { indicators, setIndicators, defaultIndicators, indicatorsError } = useContext(IndicatorContext)
+  const {dimensions} = useContext(DimensionContext)
+  const {yearDimensions, setYearDimensions, defaultYearDimensions} = useContext(YearDimensionContext)
   // const [yearIndicators, setYearIndicators] = useState([])
   // État pour stocker les pays sélectionnés
   const [selectedCountries, setselectedCountries] = useState([null, null, null, null, null]);
@@ -27,19 +29,14 @@ export default function ComparisonPage() {
   // Données pour chaque pays
   const [countryData, setCountryData] = useState([]);
 
-  // useEffect(() => {
-  //   const indicatorsOfYearX = defaultIndicators.filter(indicator => scores.some(score => score.dimensionName === indicator.name));
-  //   setYearIndicators(indicatorsOfYearX)
-  // }, [defaultIndicators, scores])
-
   useEffect(() => {
-    const defaultSelectedCriteria = defaultIndicators.reduce((indicatorsObject, indicator, index) => {
-      indicatorsObject[indicator.name] = (index > 3 ? false : true)
-      return indicatorsObject
+    const defaultSelectedCriteria = defaultYearDimensions.reduce((dimensionsObject, dimension, index) => {
+      dimensionsObject[dimension.name] = (index > 2 ? false : true)
+      return dimensionsObject
     }, {})
 
     setSelectedCriteria(defaultSelectedCriteria)
-  }, [defaultIndicators])
+  }, [defaultYearDimensions])
 
   // Mise à jour des données du graphique lorsque les pays ou critères sélectionnés changent
   useEffect(() => {
@@ -66,7 +63,7 @@ export default function ComparisonPage() {
               newCountryData.push(country);
             }
             // Ajouter la valeur de l'indicateur pour ce pays
-            dataPoint[`${country.countryName[0]} ${country.countryName}`] = scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator).score;
+            dataPoint[`${country.countryName}`] = scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator).score;
           }
         }
       });
@@ -132,7 +129,7 @@ export default function ComparisonPage() {
           selectedCriteria={selectedCriteria}
           criteriaCount={criteriaCount}
           onCriteriaChange={handleCriteriaChange}
-          defaultIndicators={defaultIndicators}
+          defaultYearDimensions={defaultYearDimensions}
         />
 
         {/* Sélection des pays */}

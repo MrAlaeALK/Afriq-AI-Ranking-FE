@@ -2,9 +2,13 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useEffect, useRef, useState, useContext, useCallback } from 'react';
 import { GeoJSON, MapContainer, Popup, TileLayer, ZoomControl, useMap } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
 import { CountriesRankingContext } from '../../context/CountriesRankingContext';
-import { IndicatorContext } from '../../context/IndicatorContext';
+import { DimensionContext } from '../../context/DimensionContext';
 import { ScoresContext } from '../../context/ScoresContext';
+import { YearDimensionContext } from '../../context/YearDimensionContext';
+
+
 
 // Fix Leaflet icon issue
 delete L.Icon.Default.prototype._getIconUrl;
@@ -13,20 +17,17 @@ L.Icon.Default.mergeOptions({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
-
+// // this component is still filled with problems which mostly have one source which is that react leaflet is not reacting to react state change
 const MapComponent = ({ selectedCountry, colorScale }) => {
 
   const {countriesRanking} = useContext(CountriesRankingContext);
-  const {indicators} = useContext(IndicatorContext);
+  const {yearDimensions} = useContext(YearDimensionContext);
   const {scores} = useContext(ScoresContext)
   const [geojsonData, setGeojsonData] = useState(null);
   const [error, setError] = useState(null);
   const [selectedCountryData, setSelectedCountryData] = useState(null);
   const [popupPosition, setPopupPosition] = useState(null);
   const mapRef = useRef(null);
-  // const [mapCenter, setMapCenter] = useState([5, 20]);
-
-  // console.log(mapCenter)
 
   const countriesRankingRef = useRef(countriesRanking);
 
@@ -78,15 +79,13 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
   }, []);
 
   // Find centroid of a country by name
-  const findCountryCentroid = (countryName) => {
+  const findCountryCentroid = (countryCode) => {
     if (!geojsonData) return null;
 
     const feature = geojsonData.features.find(f => {
-      const name = f.properties?.name ||
-        f.properties?.NAME ||
-        f.properties?.SOVEREIGNT ||
-        f.properties?.merge_group;
-      return name === countryName;
+      const code =  f.properties?.["ISO3166-1-Alpha-2"] ||
+      'Unknown country';
+      return code === countryCode;
     });
 
     if (feature && feature.geometry) {
@@ -121,7 +120,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
       // Utiliser les données les plus récentes (avec le rank et weightedScore actualisés)
       const countryData = countriesRanking.find(c => c.countryName === selectedCountry);
       if (countryData) {
-        const centroid = findCountryCentroid(selectedCountry);
+        const centroid = findCountryCentroid(countryData.countryCode);
         if (centroid) {
           setSelectedCountryData(countryData);
           setPopupPosition({ lat: centroid[0], lng: centroid[1] });
@@ -163,22 +162,19 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
   };
 
   const getGeoJSONStyle = (feature) => {
-    const countryName =
-      feature.properties?.name ||
-      feature.properties?.NAME ||
-      feature.properties?.SOVEREIGNT ||
-      feature.properties?.merge_group ||
+    const countryCode =
+      feature.properties?.["ISO3166-1-Alpha-2"] ||
       'Unknown country';
 
     // Find country data from rankedcountriesRanking to get the most up-to-date data
-    const countryData = countriesRanking.find(c => c.countryName === countryName);
+    const countryData = countriesRanking.find(c => c.countryCode === countryCode);
 
     // Utiliser directement weightedScore s'il existe, sinon calculer
     const weightedScore = countryData ?
       countryData.finalScore :
       undefined;
 
-    if ((selectedCountryData && countryName === selectedCountryData.countryName) || (selectedCountry && countryName === selectedCountry)) {
+    if ((selectedCountryData && countryCode === selectedCountryData.countryCode) || (selectedCountry && countryCode === selectedCountry)) {
       return {
         fillColor: '#ff6b6b',
         weight: 2,
@@ -197,11 +193,8 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
   };
 
   const onEachFeature = (feature, layer) => {
-    const countryName =
-      feature.properties?.name ||
-      feature.properties?.NAME ||
-      feature.properties?.SOVEREIGNT ||
-      feature.properties?.merge_group ||
+    const countryCode =
+      feature.properties?.["ISO3166-1-Alpha-2"] ||
       'Unknown country';
 
     layer.on({
@@ -212,9 +205,9 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
           weight: 2,
         });
         layer.bringToFront();
-        //add a tooltip on hover
+        //add a tooltip on hover (just let ai generate the code here and it needs styling)
         const countryData = countriesRankingRef.current.find(
-          c => c.countryName === countryName
+          c => c.countryCode === countryCode
         );
         if(countryData){
           layer.bindTooltip(
@@ -238,7 +231,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
         // console.log("Country clicked:", countryName);
 
         const countryData = countriesRankingRef.current.find(
-          c => c.countryName === countryName
+          c => c.countryCode === countryCode
         );
 
         if (countryData) {
@@ -273,7 +266,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
   };
 
   // Country popup content
-  const CountryPopup = ({ country, indicators }) => {
+  const CountryPopup = ({ country, yearDimensions }) => {
     if (!country) return null;
 
     // Display only criteria that are included in the weights object
@@ -303,7 +296,11 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
       <div className="country-popup" style={{ minWidth: '300px', maxWidth: '400px' }}>
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center">
-            <span className="text-2xl mr-2">{country.countryName[0]}</span>
+            <img
+              src={`/public/flags/${country.countryCode}.svg`}
+              alt={`${country.countryName} flag`}
+              className="w-10 h-10 mr-2"
+            />
             <h3 className="text-xl font-bold">{country.countryName}</h3>
           </div>
           <div className="bg-gray-100 rounded-full px-3 py-1 text-sm">
@@ -327,15 +324,15 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
 
         <div className="space-y-2">
           <h4 className="font-medium">Score Details</h4>
-          {indicators && indicators.map(indicator => (
-            indicator.name && (
-              <div key={indicator.id} className="flex justify-between items-center">
-                <div className="text-sm text-gray-600">{indicator.name} :</div>
+          {yearDimensions && yearDimensions.map(dimension => (
+            dimension.name && (
+              <div key={dimension.id} className="flex justify-between items-center">
+                <div className="text-sm text-gray-600">{dimension.name} :</div>
                 <div className="flex items-center">
                   <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score}%` }}></div>
+                    <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${scores.find(score => score.countryName === country.countryName && score.dimensionName === dimension.name).score}%` }}></div>
                   </div>
-                  <ScoreBadge score={scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score} />
+                  <ScoreBadge score={scores.find(score => score.countryName === country.countryName && score.dimensionName === dimension.name).score.toFixed(2)} />
                 </div>
               </div>
             )
@@ -344,7 +341,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
 
         <div className="mt-4 pt-3 border-t border-gray-200">
           <div className="text-xs text-gray-500">
-            Region: {country.countryName[1]}
+            Region: {country.countryRegion}
           </div>
         </div>
 
@@ -382,20 +379,41 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
         minZoom={3}
         maxZoom={6}
         maxBounds={[[-40, -40], [40, 60]]}
-        // maxBounds={popupPosition ? undefined : [[-40, -40], [40, 60]]}
-        // maxBounds={[[-40, -25], [40, 65]]}
         ref={mapRef}
         whenCreated={(map) => { mapRef.current = map; }}
       >
         <ZoomControl position="bottomright" />
+        {/* //different tiles that i tried to use to get the blue sea and no labels and what i am using currently is the best out of these */}
         {/* <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap"
         /> */}
-        <TileLayer
+        {/* <TileLayer
           url="https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png"
           attribution="&copy; OpenStreetMap &copy; CartoDB"
+        /> */}
+
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png"
+          attribution="&copy; OpenStreetMap &copy; CartoDB"
+          // subdomains={['a','b','c','d']}
         />
+
+        {/* <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution="&copy; OpenStreetMap &copy; CartoDB"
+          subdomains={['a','b','c','d']}
+        /> */}
+
+        {/* <TileLayer
+          url="https://stamen-tiles.a.ssl.fastly.net/terrain/{z}/{x}/{y}.jpg"
+          attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, CC BY 3.0 — Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        /> */}
+
+        {/* <TileLayer
+          url="https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg"
+          attribution='Map tiles by <a href="http://stamen.com">Stamen Design</a>, CC BY 3.0 — Map data © <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        /> */}
 
         {geojsonData && (
           <GeoJSON
@@ -414,7 +432,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
             autoPan={true}
             closeButton={false}
           >
-            <CountryPopup country={selectedCountryData} indicators={indicators} />
+            <CountryPopup country={selectedCountryData} yearDimensions={yearDimensions} />
           </Popup>
         )}
       </MapContainer>

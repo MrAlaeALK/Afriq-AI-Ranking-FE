@@ -21,12 +21,23 @@ const Hero = () => {
               </a>
             </div>
           </div>
-          <div className="w-full md:w-1/2">
+          
+          {/* <div className="w-full md:w-1/2">
             <div className="africa-map h-64 md:h-80 lg:h-96 mx-auto relative rounded-xl shadow-xl">
               <div className="absolute inset-0 flex items-center justify-center text-white text-2xl font-bold opacity-0 hover:opacity-100 transition-opacity duration-300 bg-black bg-opacity-30 rounded-xl">
                 Explorez l'Afrique
               </div>
             </div>
+          </div> */}
+
+          <div className="w-full md:w-1/2 flex justify-center">
+
+            <img
+              src="/images/Cartography_of_Africa.svg"
+              alt="Carte de l'Afrique"
+              className="w-64 md:w-80 lg:w-96"
+            />
+
           </div>
         </div>
       </div>

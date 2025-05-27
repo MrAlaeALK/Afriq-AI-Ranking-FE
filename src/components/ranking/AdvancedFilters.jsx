@@ -3,15 +3,15 @@ import CriteriaSelector from './CriteriaSelector';
 const AdvancedFilters = ({ weights, setWeights, onWeightsChange }) => {
 
   const resetFilters = () => {
-    const defaultIndicators = {
+    const dimensions = {
       'odin': 40,
       'hdi': 30,
       'internet': 30
     };
-    setWeights(defaultIndicators);
+    setWeights(dimensions);
 
     if (onWeightsChange) {
-      onWeightsChange(defaultIndicators);
+      onWeightsChange(dimensions);
     }
   };
 

@@ -1,16 +1,16 @@
 import { useState, useContext } from "react"; // <- useState ajouté ici
 import CriterionCard from "./CriterionCard";
-import { IndicatorContext } from "../../context/IndicatorContext";
+import { DimensionContext } from "../../context/DimensionContext";
 
 const Criteria = () => {
-  const {defaultIndicators} = useContext(IndicatorContext);
+  const {dimensions} = useContext(DimensionContext);
   const [expanded, setExpanded] = useState(false);
 
   const toggleText = () => {
     setExpanded(!expanded);
   };
 
-  // kept it here in case we need it later 
+  // kept it here in case we need it later (icons)
 
   // const criteriaData = [
   //   {
@@ -56,14 +56,14 @@ const Criteria = () => {
         <h3 className="text-2xl md:text-3xl font-bold text-center mb-12">Nos critères d'évaluation</h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {defaultIndicators.filter((indicator, index) => index < 3).map((indicator, index) => (
+          {dimensions.filter((dimension, index) => index < 3).map((dimension, index) => (
             <CriterionCard
-              key={indicator.id}
-              icon={indicator.id}
-              title={indicator.name}
-              description={indicator.description}
-              bgColor={indicator?.bgColor}
-              textColor={indicator?.textColor}
+              key={dimension.id}
+              icon={dimension.id}
+              title={dimension.name}
+              description={dimension.description}
+              bgColor={dimension?.bgColor}
+              textColor={dimension?.textColor}
             />
           ))}
         </div>
@@ -72,14 +72,14 @@ const Criteria = () => {
           <>
             <br />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {defaultIndicators.filter((indicator, index) => index >= 3).map((indicator, index) => (
+              {dimensions.filter((dimension, index) => index >= 3).map((dimension, index) => (
                 <CriterionCard
-                  key={`expanded-${indicator.id}`}
-                  icon={indicator.id}
-                  title={indicator.name}
-                  description={indicator.description}
-                  bgColor={indicator?.bgColor}
-                  textColor={indicator?.textColor}
+                  key={`expanded-${dimension.id}`}
+                  icon={dimension.id}
+                  title={dimension.name}
+                  description={dimension.description}
+                  bgColor={dimension?.bgColor}
+                  textColor={dimension?.textColor}
                 />
               ))}
             </div>

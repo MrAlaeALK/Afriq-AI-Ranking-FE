@@ -56,12 +56,19 @@ const Header = () => {
           >
             Comparer
           </NavLink>
-          <a href="#" className="relative text-gray-600 hover:text-purple-600 transition-colors after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 hover:after:w-full after:h-[2px] after:bg-purple-600 after:transition-all after:duration-300">
+          {/* <a href="#" className="relative text-gray-600 hover:text-purple-600 transition-colors after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 hover:after:w-full after:h-[2px] after:bg-purple-600 after:transition-all after:duration-300">
             À propos
-          </a>
-          <a href="#" className="relative text-gray-600 hover:text-purple-600 transition-colors after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 hover:after:w-full after:h-[2px] after:bg-purple-600 after:transition-all after:duration-300">
+          </a> */}
+          <NavLink 
+            to="/contact" 
+            className={({ isActive }) => 
+              isActive 
+                ? "text-purple-700 font-medium" 
+                : "relative text-gray-600 hover:text-purple-600 transition-colors after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-0 hover:after:w-full after:h-[2px] after:bg-purple-600 after:transition-all after:duration-300"
+            }
+          >
             Contact
-          </a>
+          </NavLink>
         </nav>
 
         <div className="flex items-center">

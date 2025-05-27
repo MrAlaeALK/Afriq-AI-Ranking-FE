@@ -41,6 +41,42 @@ export default function RadarChartDisplay({ chartData, countryData }) {
     }
   };
 
+//this is just an ai generated solution to make flags appear in the legend through building a custom legend
+// but the problem is that those flags are not exported in the downloaded image since they are svg so it simply overcomplicates things
+// i would say that the name and color are enough but i will leave this code if you want flags
+// const CustomLegend = ({ payload }) => {
+//   return (
+//     <ul className="flex flex-wrap justify-center gap-4 list-none p-0 m-0">
+//       {payload.map((entry, index) => {
+//         const [flag, ...nameParts] = entry.value.split(" ");
+//         const name = nameParts.join(" ");
+//         const country = countryData.find(c => c.countryName === name);
+
+//         return (
+//           <li key={index} className="flex items-center space-x-2">
+//             {/* Color square like Recharts default */}
+//             <div
+//               className="w-3 h-3 rounded-sm"
+//               style={{ backgroundColor: entry.color }}
+//             ></div>
+
+//             {/* Flag image */}
+//             <img
+//               src={`/public/flags/${country.countryCode}.svg`} // assume public/flags folder
+//               alt={country.countryName}
+//               className="w-5 h-3 object-cover"
+//             />
+
+//             {/* Country name */}
+//             <span className="text-sm text-gray-800" style={{ color: entry.color }}>{country.countryName}</span>
+//           </li>
+//         );
+//       })}
+//     </ul>
+//   );
+// };
+
+
   return (
     <div className="bg-white p-6 rounded-lg shadow-md mb-8" >
       <div className="flex justify-end mb-4">
@@ -79,12 +115,13 @@ export default function RadarChartDisplay({ chartData, countryData }) {
                 verticalAlign="top"
                 align="center"
                 wrapperStyle={{ fontSize: 13 }}
+                // content={<CustomLegend/>}
               />
               {countryData.map((country, index) => (
                 <Radar
                   key={country.countryId}
-                  name={`${country.countryName[0]} ${country.countryName}`}
-                  dataKey={`${country.countryName[0]} ${country.countryName}`}
+                  name={`${country.countryName}`}
+                  dataKey={`${country.countryName}`}
                   stroke={getColor(index)}
                   strokeWidth={2}
                   fill={getColor(index)}

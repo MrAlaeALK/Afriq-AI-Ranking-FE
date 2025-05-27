@@ -2,8 +2,7 @@ import CountrySelect from './CountrySelect';
 import MapComponent from './MapComponent';
 import ColorLegend from './ColorLegend';
 
-function MapContainer({ colorScale, indicators, selectedCountry, onCountrySelect, countriesRanking, scores, setCountriesRanking }) {
-  
+function MapContainer({ colorScale, yearDimensions, selectedCountry, onCountrySelect, countriesRanking, scores, setCountriesRanking }) {
 
   return (
     <div className="w-full xl:w-2/3">
@@ -22,7 +21,7 @@ function MapContainer({ colorScale, indicators, selectedCountry, onCountrySelect
           <MapComponent
             selectedCountry={selectedCountry}
             colorScale={colorScale}
-            indicators={indicators}
+            yearDimensions={yearDimensions}
             countriesRanking={countriesRanking}
             scores={scores}
             setCountriesRanking={setCountriesRanking}

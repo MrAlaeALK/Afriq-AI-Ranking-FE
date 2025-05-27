@@ -16,7 +16,7 @@ const Footer = () => {
               <li><a href="/" className="hover:text-purple-300 transition-colors">Accueil</a></li>
               <li><a href="/carte" className="hover:text-purple-300 transition-colors">Carte</a></li>
               <li><a href="/classement" className="hover:text-purple-300 transition-colors">Classement</a></li>
-              <li><a href="#" className="hover:text-purple-300 transition-colors">Comparer</a></li>
+              <li><a href="/comparer" className="hover:text-purple-300 transition-colors">Comparer</a></li>
               <li><a href="#" className="hover:text-purple-300 transition-colors">À propos</a></li>
             </ul>
           </FooterColumn>

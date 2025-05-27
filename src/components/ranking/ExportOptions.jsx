@@ -1,17 +1,18 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import { IndicatorContext } from '../../context/IndicatorContext';
+import { DimensionContext } from '../../context/DimensionContext';
 import { ScoresContext } from '../../context/ScoresContext';
 import { useContext } from 'react';
+import { YearDimensionContext } from '../../context/YearDimensionContext';
 
 const ExportOptions = ({ filteredCountriesRanking }) => {
 
-  const {indicators} = useContext(IndicatorContext);
+  const {yearDimensions} = useContext(YearDimensionContext);
   const {scores} = useContext(ScoresContext);
   // Fonction utilitaire pour obtenir les en-têtes et données formatées
   const getFormattedData = () => {
     const staticHeaders = ['Rang', 'Pays', 'Score global'];
-    const dynamicHeaders = indicators.map(indicator => {
+    const dynamicHeaders = yearDimensions.map(dimension => {
       const labels = {
         odin: 'ODIN',
         hdi: 'IDH',
@@ -23,7 +24,7 @@ const ExportOptions = ({ filteredCountriesRanking }) => {
         health: 'Santé',
         environment: 'Environnement',
       };
-      return labels[indicator.name] || indicator.name.toUpperCase();
+      return labels[dimension.name] || dimension.name.toUpperCase();
     });
     const headers = [...staticHeaders, ...dynamicHeaders];
 
@@ -33,8 +34,8 @@ const ExportOptions = ({ filteredCountriesRanking }) => {
         country.countryName,
         country.finalScore || country.scores.global,
       ];
-      const dynamicData = indicators.map(indicator =>
-        scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score !== undefined ? scores.find(score => score.countryName === country.countryName && score.dimensionName === indicator.name).score : ''
+      const dynamicData = yearDimensions.map(dimension =>
+        scores.find(score => score.countryName === country.countryName && score.dimensionName === dimension.name).score !== undefined ? scores.find(score => score.countryName === country.countryName && score.dimensionName === dimension.name).score : ''
       );
       return [...staticData, ...dynamicData];
     });

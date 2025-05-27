@@ -10,8 +10,15 @@ export default function CountryCard({ country, index, selectedCriteria }) {
     <div className="bg-gray-50 rounded-lg shadow overflow-hidden border-t-4" style={{ borderColor: getColor(index) }}>
       <div className="p-4 bg-gray-100">
         <div className="flex items-center justify-between">
-          <h3 className="text-xl font-bold">{country.countryName[0]} {country.countryName}</h3>
-          <span className="text-sm bg-gray-200 rounded-full px-3 py-1">{country.region}</span>
+          <h3 className="text-xl font-bold flex items-center">
+            <img
+              src={`/public/flags/${country.countryCode}.svg`}
+              alt={`${country.countryName} flag`}
+              className="w-10 h-10 mr-2"
+            />
+            {country.countryName}
+          </h3>
+          <span className="text-sm bg-gray-200 rounded-full px-3 py-1">{country.countryRegion}</span>
         </div>
       </div>
       <div className="p-4">

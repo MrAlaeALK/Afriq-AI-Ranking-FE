@@ -86,10 +86,14 @@ export const getColor = (index) => {
 export const getCountryGroups = (countriesRanking) => {
   const countryGroups = {};
   countriesRanking.forEach(country => {
-    if (!countryGroups[country.region]) {
-      countryGroups[country.region] = [];
+    if (!countryGroups[country.countryRegion]) {
+      countryGroups[country.countryRegion] = [];
     }
-    countryGroups[country.region].push(country);
+    countryGroups[country.countryRegion].push(country);
   });
   return countryGroups;
 };
+
+// i let this file so maybe we can centralize some functions like colors maybe that was the idea of Abdelghani as well
+//but right now we are using getCountryGroups and getColor only in the comparison page 
+// to improve later
