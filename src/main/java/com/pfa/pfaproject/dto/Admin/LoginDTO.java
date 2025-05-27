@@ -1,11 +1,17 @@
 package com.pfa.pfaproject.dto.Admin;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 
+/**
+ * Data Transfer Object for admin login operations.
+ * Contains the credentials needed for authentication.
+ */
 public record LoginDTO(
-        @NotEmpty(message = "email or username must not be empty")@NotBlank
+        @NotBlank(message = "Username or email is required")
         String usernameOrEmail,
-        @NotEmpty(message = "password must not bbe empty")@NotBlank
+        
+        @NotBlank(message = "Password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters")
         String password
 ) {
 }
