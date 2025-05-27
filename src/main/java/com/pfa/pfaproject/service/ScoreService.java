@@ -5,6 +5,7 @@ import com.pfa.pfaproject.model.Country;
 import com.pfa.pfaproject.model.Indicator;
 import com.pfa.pfaproject.model.Score;
 import com.pfa.pfaproject.repository.ScoreRepository;
+import com.pfa.pfaproject.util.Utils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -91,6 +92,8 @@ public class ScoreService {
      * @return The saved score
      */
     public Score save(Score score) {
+//        score.setRawValue(Utils.round(score.getRawValue(), 2));
+        score.setScore(Utils.round(score.getScore(), 2));
         return scoreRepository.save(score);
     }
 

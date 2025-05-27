@@ -62,7 +62,7 @@ public class AdminActionsController {
      * @param dimension The indicator to add
      * @return The created indicator category
      */
-    @PostMapping("/indicator-categories")
+    @PostMapping("/dimensions")
     public ResponseEntity<?> addCategory(@Valid @RequestBody Dimension dimension) {
         Dimension addDimension = adminBusinessService.addDimension(dimension);
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(addDimension));
@@ -130,7 +130,7 @@ public class AdminActionsController {
                 .body(ResponseWrapper.success(adminBusinessService.generateRanking(generateRankOrFinalScoreDTO)));
     }
 
-    @PostMapping("/indicators-weigths")
+    @PostMapping("/indicators-weights")
     public ResponseEntity<?> addIndicatorWeight(@RequestBody AddIndicatorWeightDTO addIndicatorWeightDTO) {
         return ResponseEntity.status(HttpStatus.OK)
                 .body(ResponseWrapper.success(adminBusinessService.addIndicatorWeight(addIndicatorWeightDTO)));

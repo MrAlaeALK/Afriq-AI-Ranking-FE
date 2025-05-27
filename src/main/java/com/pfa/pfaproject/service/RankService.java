@@ -5,6 +5,7 @@ import com.pfa.pfaproject.exception.CustomException;
 import com.pfa.pfaproject.model.Country;
 import com.pfa.pfaproject.model.Rank;
 import com.pfa.pfaproject.repository.RankRepository;
+import com.pfa.pfaproject.util.Utils;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -94,6 +95,7 @@ public class RankService {
      */
     @Transactional
     public Rank save(Rank rank) {
+        rank.setFinalScore(Utils.round(rank.getFinalScore(), 2));
         return rankRepository.save(rank);
     }
 
@@ -152,7 +154,7 @@ public class RankService {
         for (Country country : countriesRanked) {
             Rank rank = findByCountryIdAndYear(country.getId(), year);
 
-            listOfRanksAndScores.add(new getFinalScoreAndRankDTO(country.getId(), country.getName(), country.getCode().substring(0,2), rank.getFinalScore(), rank.getRank()));
+            listOfRanksAndScores.add(new getFinalScoreAndRankDTO(country.getId(), country.getName(), country.getCode(), country.getRegion(), rank.getFinalScore(), rank.getRank()));
         }
         return listOfRanksAndScores;
     }

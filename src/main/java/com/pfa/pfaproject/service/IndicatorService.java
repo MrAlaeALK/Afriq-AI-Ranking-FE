@@ -68,15 +68,6 @@ public class IndicatorService {
     }
 
     /**
-     * Finds all indicators in a specific category.
-     * @param categoryId The category ID to search
-     * @return List of indicators in the category
-     */
-//    public List<Indicator> findByDimension(Long categoryId) {
-//        return indicatorRepository.findByDimension_Id(categoryId);
-//    }
-
-    /**
      * Saves an indicator entity to the database.
      * Uses MinMax Normalisation as default if normalizationType is not specified.
      * @param indicator The indicator to save

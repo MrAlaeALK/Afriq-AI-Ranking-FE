@@ -193,207 +193,18 @@ public class AdminBusinessService {
      * @return The generated rank entry
      * @throws CustomException if rank already exists or country not found
      */
-//    public Rank generateFinalScoreForCountry(GenerateFinalScoreForCountryDTO dto) {
-//
-//        Rank existingRank = rankService.findByCountryIdAndYear(dto.countryId(), dto.year());
-//
-//        if (existingRank != null) {
-//            throw new CustomException("Rank already exists", HttpStatus.CONFLICT);
-//        }
-//
-//        Country country = countryService.findById(dto.countryId());
-//        double finalScore = scoreService.calculateFinalScore(dto.countryId(), dto.year());
-//
-//        Rank newRank = Rank.builder()
-//                .country(country)
-//                .year(dto.year())
-//                .finalScore(finalScore)
-//                .rank(1) // Initial rank, will be updated later
-//                .build();
-//
-//        Rank savedRank = rankService.save(newRank);
-//
-//        return savedRank;
-//    }
 
     /**
      * Generates final scores for all countries in a specific year.
      * @param dto DTO containing the year
      * @return List of generated rank entries
      */
-//    public List<Rank> generateFinalScore(GenerateRankOrFinalScoreDTO dto) {
-//
-//        List<Country> countries = countryService.findAll();
-//        List<Rank> finalScores = new ArrayList<>();
-//
-//        for (Country country : countries) {
-//            try {
-//                Rank finalScore = generateFinalScoreForCountry(
-//                        new GenerateFinalScoreForCountryDTO(country.getId(), dto.year()));
-//                finalScores.add(finalScore);
-//            } catch (CustomException e) {
-//                if (e.getStatus() == HttpStatus.CONFLICT) {
-//                    // If rank already exists, get the existing one
-//                    Rank existingRank = rankService.findByCountryIdAndYear(country.getId(), dto.year());
-//                    finalScores.add(existingRank);
-//                } else {
-//                    // Log other errors but continue processing other countries
-//                    log.error("Error generating final score for country: {}, year: {}, error: {}",
-//                            country.getName(), dto.year(), e.getMessage());
-//                }
-//            }
-//        }
-//
-//        return finalScores;
-//    }
 
     /**
      * Generates rankings for all countries in a specific year.
      * @param dto DTO containing the year
      * @return List of countries ordered by rank
      */
-//    public List<Country> generateRanking(GenerateRankOrFinalScoreDTO dto) {
-//
-//        // Ensure all countries have final scores
-//        generateFinalScore(dto);
-//
-//        // Let the RankService handle the position calculation
-//        rankService.updateRankPositions(dto.year());
-//
-//        List<Rank> yearRanking = rankService.findByYearOrderByFinalScoreDesc(dto.year());
-//
-//        List<Country> rankedCountries = new ArrayList<>();
-//        for (Rank rank : yearRanking) {
-//            rankedCountries.add(rank.getCountry());
-//        }
-//
-//        return rankedCountries;
-//    }
-
-//    public double calculateCategoryScoresForCountry(int year, Country country, Dimension category){
-//        List<Indicator> categoryIndicators = category.getIndicators();
-//
-//        List<Score> countryYearScores = country.getScores()
-//                .stream()
-//                .filter(score -> score.getYear() == year)
-//                .toList();
-//
-//        double finalCategoryScore = 0;
-//        double weightSum = 0;
-//
-//        for (Score score : countryYearScores) {
-//            Indicator indicator = score.getIndicator();
-//            if(categoryIndicators.contains(indicator)) {
-//                int weight = indicator.getWeights().stream().filter(indicatorWeight -> indicatorWeight.getYear() == year)
-//                        .findFirst().get().getWeight();
-//                finalCategoryScore += weight * score.getScore();
-//                weightSum += weight;
-//            }
-//
-//        }
-//
-//        return finalCategoryScore /= weightSum;
-
-
-        //new definition
-
-//        List<DimensionWeight> categoryWeightHistory = category.getWeights();
-//
-//        //find the corresponded category archive for that specific year
-//        DimensionWeight categoryWeight = categoryWeightHistory.stream()
-//                .filter(indicatorCategory -> indicatorCategory.getYear() == year)
-//                .findFirst().orElse(null);
-//
-//        List<Score> scores = country.getScores().stream()
-//                .filter(score -> score.getYear() == year)
-//                .toList();
-//
-//        double categoryScore = 0;
-//        double weightSum = 0;
-//
-//        for (Score score : scores) {
-//            IndicatorWeight indicator = categoryWeight.getIndicatorWeights()
-//                    .stream()
-//                    .filter(indicatorWeight -> indicatorWeight.getIndicator().getId().equals(score.getIndicator().getId()))
-//                    .findFirst().orElse(null);
-//
-//            if(indicator != null) {
-//                categoryScore += score.getScore() * indicator.getWeight();
-//                weightSum += indicator.getWeight();
-//            }
-//        }
-//
-//        return categoryScore / weightSum;
-//
-//    }
-
-//    public Map<IndicatorCategory, Double> caculateCatgoriesScoresForCountry(int year, Country country){
-//        List<IndicatorCategory> categories = categoryService.findAll();
-//        Map<IndicatorCategory, Double> categoriesScores = new HashMap<>();
-//
-//        for (IndicatorCategory category : categories) {
-//            double score = calculateCategoryScoresForCountry(year, country, category);
-//            categoriesScores.put(category, score);
-//        }
-//        return categoriesScores;
-//    }
-
-//    public Map<DimensionWeight, Double> generateCategoryScoresForCountry(int year, Country country) {
-//        List<DimensionWeight> categories = categoryWeightService.getAllByYear(year);
-//
-//        Map<DimensionWeight, Double> categoriesScores = new HashMap<>();
-//
-//        for (DimensionWeight categoryWeight : categories) {
-//            Dimension category = categoryWeight.getCategory();
-//            double score = calculateCategoryScoresForCountry(year, country, category);
-//            categoriesScores.put(categoryWeight, score);
-//
-//            DimensionScore categoryScore = DimensionScore.builder()
-//                    .score(score)
-//                    .year(year)
-//                    .dimension(category)
-//                    .country(country)
-//                    .build();
-//
-//            dimensionScoreService.save(categoryScore);
-//        }
-//
-//
-//
-//        return categoriesScores;
-//    }
-//
-//
-//    public Rank generateFinalScoreForCountry(GenerateFinalScoreForCountryDTO dto) {
-//
-//        Rank existingRank = rankService.findByCountryIdAndYear(dto.countryId(), dto.year());
-//
-//        if (existingRank != null) {
-//            throw new CustomException("Rank already exists", HttpStatus.CONFLICT);
-//        }
-//
-//        Country country = countryService.findById(dto.countryId());
-//        Map<DimensionWeight, Double> categoryScores = generateCategoryScoresForCountry(dto.year(), countryService.findById(dto.countryId()));
-//        double finalScore = 0;
-//        double weightSum = 0;
-//
-//        for (Map.Entry<DimensionWeight, Double> entry : categoryScores.entrySet()) {
-//            finalScore += entry.getValue() * entry.getKey().getDimensionWeight();
-//            weightSum += entry.getKey().getDimensionWeight();
-//        }
-////        double finalScore = scoreService.calculateFinalScore(dto.countryId(), dto.year());
-//
-//        Rank newRank = Rank.builder()
-//                .country(country)
-//                .year(dto.year())
-//                .finalScore(finalScore/weightSum)
-//                .rank(1) // Initial rank, will be updated later
-//                .build();
-//
-//        Rank savedRank = rankService.save(newRank);
-//
-//        return savedRank;
-//    }
 
     public DimensionWeight addDimensionWeight(AddWeightDTO dto) {
         Dimension dimension = dimensionService.findById(dto.id());
@@ -402,10 +213,7 @@ public class AdminBusinessService {
                 .dimensionWeight(dto.weight())
                 .dimension(dimension)
                 .build();
-//        dimension.addWeight(dimensionWeight);
-//        dimensionService.save(dimension);
         return categoryWeightService.save(dimensionWeight);
-//        return categoryWeightService.save(indicatorCategoryWeight);
     }
 
     public IndicatorWeight addIndicatorWeight(AddIndicatorWeightDTO dto) {
@@ -414,18 +222,12 @@ public class AdminBusinessService {
                 .weight(dto.weight())
                 .dimensionWeight(categoryWeightService.findByCategoryAndYear(dto.categoryId(), dto.year()))
                 .build();
-
-//        DimensionWeight categoryWeight = categoryWeightService.findByCategoryAndYear(dto.categoryId(), dto.year());
-
-//        IndicatorWeight indicatorWeightSaved =  indicatorWeightService.save(indicatorWeight);
-//        categoryWeight.getIndicatorWeights().add(indicatorWeightSaved);
-//        categoryWeightService.save(categoryWeight);
         return indicatorWeightService.save(indicatorWeight);
     }
 
 
     public void calculateDimensionScoresForCountry(int year, Country country){
-        // find dimensions for that year
+        // find dimensions for that year simply
         List<DimensionWeight> dimensions = dimensionWeightService.findByYear(year);
 
         for(DimensionWeight dimension : dimensions){

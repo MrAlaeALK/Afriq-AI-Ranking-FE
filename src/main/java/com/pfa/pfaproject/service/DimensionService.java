@@ -83,30 +83,6 @@ public class DimensionService {
         return dimensionRepository.findByName(name);
     }
 
-    /**
-     * Adds an indicator to a category.
-     * @param categoryId The indicator category ID
-     * @param indicator The indicator to add
-     * @return The updated indicator category
-     */
-//    @Transactional
-//    public Dimension addIndicator(Long categoryId, Indicator indicator) {
-//        Dimension category = findById(categoryId);
-//        category.addIndicator(indicator);
-//        return dimensionRepository.save(category);
-//    }
-
-    /**
-     * Removes an indicator from a category.
-     * @param categoryId The indicator category ID
-     * @param indicator The indicator to remove
-     * @return The updated indicator category
-     */
-//    public Dimension removeIndicator(Long categoryId, Indicator indicator) {
-//        Dimension category = findById(categoryId);
-//        category.removeIndicator(indicator);
-//        return dimensionRepository.save(category);
-//    }
 
     /**
      * Updates the display order of an indicator category.

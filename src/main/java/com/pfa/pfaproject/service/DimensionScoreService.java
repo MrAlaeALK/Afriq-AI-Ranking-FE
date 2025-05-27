@@ -4,6 +4,7 @@ import com.pfa.pfaproject.dto.Score.getScoresByYearDTO;
 import com.pfa.pfaproject.model.DimensionScore;
 import com.pfa.pfaproject.model.Score;
 import com.pfa.pfaproject.repository.DimensionScoreRepository;
+import com.pfa.pfaproject.util.Utils;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ public class DimensionScoreService {
     private final DimensionScoreRepository dimensionScoreRepository;
 
     public DimensionScore save(DimensionScore dimensionScore) {
+        dimensionScore.setScore(Utils.round(dimensionScore.getScore(), 2));
         return dimensionScoreRepository.save(dimensionScore);
     }
 
