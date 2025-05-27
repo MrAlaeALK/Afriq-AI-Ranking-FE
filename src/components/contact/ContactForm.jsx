@@ -29,7 +29,7 @@ function ContactForm() {
       const emailData = {
         name: formData.name,         // Pour la variable "senderName" dans Thymeleaf
         from: formData.email, // Email de l'expéditeur
-        to: 'your_email',
+        to: 'email_qui_recoit',
         subject: formData.subject,
         text: formData.message
       };
