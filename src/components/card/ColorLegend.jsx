@@ -1,4 +1,3 @@
-
 const ColorLegend = ({ colorScale }) => {
   let gradient = '';
 
@@ -30,14 +29,9 @@ const ColorLegend = ({ colorScale }) => {
         {[0, 20, 40, 60, 80, 100].map((val, idx) => (
           <div
             key={idx}
+            className="absolute -top-4 transform -translate-x-1/2 text-xs font-bold text-gray-800 dark:text-gray-300"
             style={{
-              position: 'absolute',
-              top: '-18px',
               left: `${val}%`,
-              transform: 'translateX(-50%)',
-              fontSize: '12px',
-              color: '#333',
-              fontWeight: 'bold',
             }}
           >
             {val}

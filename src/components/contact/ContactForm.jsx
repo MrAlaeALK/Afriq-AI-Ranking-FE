@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function ContactForm() {
+  const {t} = useTranslation();
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -29,7 +32,7 @@ function ContactForm() {
       const emailData = {
         name: formData.name,         // Pour la variable "senderName" dans Thymeleaf
         from: formData.email, // Email de l'expéditeur
-        to: 'email_qui_recoit',
+        to: 'abdealghanismen1@gmail.com',
         subject: formData.subject,
         text: formData.message
       };
@@ -67,7 +70,7 @@ function ContactForm() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {success && (
           <div className="mb-6 p-4 bg-green-50 text-green-700 rounded-md">
-            Votre message a été envoyé avec succès. Nous vous répondrons dans les plus brefs délais.
+            {t('success')}
           </div>
         )}
         
@@ -78,7 +81,7 @@ function ContactForm() {
         )}
         
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-600 mb-2">Nom</label>
+          <label htmlFor="name" className="block text-sm font-medium text-gray-600 dark:text-gray-200 mb-2">{t('name')}</label>
           <input
             type="text"
             id="name"
@@ -91,7 +94,7 @@ function ContactForm() {
         </div>
         
         <div>
-          <label htmlFor="email" className="block text-sm font-medium text-gray-600 mb-2">Email</label>
+          <label htmlFor="email" className="block text-sm font-medium text-gray-600 dark:text-gray-200 mb-2">Email</label>
           <input
             type="email"
             id="email"
@@ -104,7 +107,7 @@ function ContactForm() {
         </div>
         
         <div>
-          <label htmlFor="subject" className="block text-sm font-medium text-gray-600 mb-2">Sujet</label>
+          <label htmlFor="subject" className="block text-sm font-medium text-gray-600 dark:text-gray-200 mb-2">{t('subject')}</label>
           <input
             type="text"
             id="subject"
@@ -116,14 +119,14 @@ function ContactForm() {
         </div>
         
         <div>
-          <label htmlFor="message" className="block text-sm font-medium text-gray-600 mb-2">Message</label>
+          <label htmlFor="message" className="block text-sm font-medium text-gray-600 dark:text-gray-200 mb-2">Message</label>
           <textarea
             id="message"
             name="message"
             value={formData.message}
             onChange={handleChange}
             rows="5"
-            className="w-full px-4 py-3 border-b border-gray-300 focus:border-purple-500 focus:outline-none transition-colors bg-transparent resize-none"
+            className="w-full px-4 py-3 border-b border-gray-300 focus:border-purple-500 focus:outline-none transition-colors bg-transparent"
             required
           ></textarea>
         </div>
@@ -134,7 +137,7 @@ function ContactForm() {
             className="px-8 py-4 bg-purple-600 hover:bg-purple-700 text-white font-medium transition-colors focus:outline-none rounded-full"
             disabled={loading}
           >
-            {loading ? 'Envoi en cours...' : 'Envoyer'}
+            {loading ? (t('sending')) : (t('send'))}
           </button>
         </div>
       </form>

@@ -1,18 +1,18 @@
-import { useState, useContext } from "react"; // <- useState ajouté ici
+import { useState, useContext } from "react";
 import CriterionCard from "./CriterionCard";
 import { DimensionContext } from "../../context/DimensionContext";
+import { useTranslation } from 'react-i18next';
 
 const Criteria = () => {
-  const {dimensions} = useContext(DimensionContext);
+  const { dimensions } = useContext(DimensionContext);
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslation();
 
   const toggleText = () => {
     setExpanded(!expanded);
   };
 
-  // kept it here in case we need it later (icons)
-
-  // const criteriaData = [
+  //  const criteriaData = [
   //   {
   //     icon: (
   //       <svg className="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -49,14 +49,15 @@ const Criteria = () => {
   // ];
 
 
-
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-white dark:bg-gray-800 dark:text-white">
       <div className="container mx-auto px-4">
-        <h3 className="text-2xl md:text-3xl font-bold text-center mb-12">Nos critères d'évaluation</h3>
+        <h3 className="text-2xl md:text-3xl font-bold text-center mb-12">
+          {t('criteria')}
+        </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {dimensions.filter((dimension, index) => index < 3).map((dimension, index) => (
+          {dimensions.filter((dimension, index) => index < 3).map((dimension) => (
             <CriterionCard
               key={dimension.id}
               icon={dimension.id}
@@ -72,7 +73,7 @@ const Criteria = () => {
           <>
             <br />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {dimensions.filter((dimension, index) => index >= 3).map((dimension, index) => (
+              {dimensions.filter((dimension, index) => index >= 3).map((dimension) => (
                 <CriterionCard
                   key={`expanded-${dimension.id}`}
                   icon={dimension.id}
@@ -89,9 +90,9 @@ const Criteria = () => {
         <div className="text-center mt-6">
           <button
             onClick={toggleText}
-            className="px-6 py-3 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-600 transition-colors shadow-md"
+            className="px-6 py-3 bg-purple-500 text-white font-medium rounded-lg hover:bg-purple-600 dark:hover:bg-purple-700 transition-colors shadow-md"
           >
-            {expanded ? "Voir moins" : "Voir plus"}
+            {expanded ? t('seeLess') : t('seeMore')}
           </button>
         </div>
       </div>

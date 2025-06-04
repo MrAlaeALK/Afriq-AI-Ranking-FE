@@ -21,9 +21,13 @@ function MapPage() {
 
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen p-4">
       <PageTitle />
-      <select value={year} onChange={e => setYear(parseInt(e.target.value))}>
+      <select 
+        value={year} 
+        onChange={e => setYear(parseInt(e.target.value))}
+        className="mt-4 mb-6 px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+      >
         <option value="2021">2021</option>
         <option value="2020">2020</option>
       </select>

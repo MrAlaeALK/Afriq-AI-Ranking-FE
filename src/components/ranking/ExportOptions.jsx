@@ -4,11 +4,13 @@ import { DimensionContext } from '../../context/DimensionContext';
 import { ScoresContext } from '../../context/ScoresContext';
 import { useContext } from 'react';
 import { YearDimensionContext } from '../../context/YearDimensionContext';
+import { useTranslation } from 'react-i18next';
 
 const ExportOptions = ({ filteredCountriesRanking }) => {
 
   const {yearDimensions} = useContext(YearDimensionContext);
   const {scores} = useContext(ScoresContext);
+  const {t} = useTranslation();
   // Fonction utilitaire pour obtenir les en-têtes et données formatées
   const getFormattedData = () => {
     const staticHeaders = ['Rang', 'Pays', 'Score global'];
@@ -108,47 +110,59 @@ const ExportOptions = ({ filteredCountriesRanking }) => {
 
   return (
     <div className="flex flex-col md:flex-row gap-3">
-      <button
-        onClick={exportCSV}
-        className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+    <button
+      onClick={exportCSV}
+      className="flex items-center justify-center px-4 py-2 
+        bg-white dark:bg-gray-800 
+        text-gray-800 dark:text-white 
+        border border-gray-300 dark:border-gray-600 
+        rounded-lg 
+        hover:bg-gray-50 dark:hover:bg-gray-700 
+        transition-colors"
+    >
+      <svg
+        className="w-5 h-5 mr-2 text-gray-600 dark:text-gray-300"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <svg
-          className="w-5 h-5 mr-2 text-gray-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-          />
-        </svg>
-        Exporter CSV
-      </button>
-      <button
-        onClick={exportPDF}
-        className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+      {t('export')} CSV
+    </button>
+    <button
+      onClick={exportPDF}
+      className="flex items-center justify-center px-4 py-2 
+        bg-white dark:bg-gray-800 
+        text-gray-800 dark:text-white 
+        border border-gray-300 dark:border-gray-600 
+        rounded-lg 
+        hover:bg-gray-50 dark:hover:bg-gray-700 
+        transition-colors"
+    >
+      <svg
+        className="w-5 h-5 mr-2 text-gray-600 dark:text-gray-300"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
       >
-        <svg
-          className="w-5 h-5 mr-2 text-gray-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-          />
-        </svg>
-        Exporter PDF
-      </button>
-    </div>
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth="2"
+          d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+        />
+      </svg>
+      {t('export')} PDF
+    </button>
+  </div>
   );
 };
 

@@ -10,8 +10,10 @@ import { DimensionContext } from '../context/DimensionContext';
 import { ScoresContext } from '../context/ScoresContext';
 import { YearContext } from '../context/YearContext';
 import { YearDimensionContext } from '../context/YearDimensionContext'
+import { useTranslation } from 'react-i18next';
 
 export default function ComparisonPage() {
+  const {t} = useTranslation();
   const { year, setYear } = useContext(YearContext)
   const { countriesRanking, setCountriesRanking, countriesRankingError } = useContext(CountriesRankingContext);
   const { scores, setScores, scoresError } = useContext(ScoresContext)
@@ -94,7 +96,7 @@ export default function ComparisonPage() {
 
     // Vérifier si la déselection laisserait moins de 3 critères
     if (selectedCriteria[criterion] && newCount < 3) {
-      alert("Vous devez sélectionner au moins 3 critères pour le graphique radar.");
+      alert(t('alertCriteria'));
       return;
     }
 
@@ -107,14 +109,14 @@ export default function ComparisonPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
       <main className="flex-grow pt-20 pb-16">
-        <section className="bg-purple-700 py-12 mb-8">
+        <section className="bg-purple-700 dark:bg-purple-900 py-12 mb-8">
           <div className="container mx-auto px-4">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-4">Comparaison des Pays Africains</h1>
-            <p className="text-lg text-purple-100">
-              Explorez et comparez les performances des pays africains selon différents critères d'ouverture des données et de développement.
+            <h1 className="text-3xl md:text-4xl font-bold text-white dark:text-purple-300 mb-4">{t('titleCompare')}</h1>
+            <p className="text-lg text-purple-100 dark:text-purple-400">
+              {t('compareDesc')}
             </p>
           </div>
         </section>
@@ -162,9 +164,9 @@ export default function ComparisonPage() {
                 ) : (
                   <div className="text-center p-8 bg-gray-100 rounded-lg">
                     {criteriaCount < 3 ? (
-                      <p className="text-gray-500">Sélectionnez au moins 3 critères pour voir le graphique radar</p>
+                      <p className="text-gray-500">{t('enoghCriteria')}</p>
                     ) : (
-                      <p className="text-gray-500">Sélectionnez au moins un pays pour voir les données</p>
+                      <p className="text-gray-500">{t('enoghCountry')}</p>
                     )}
                   </div>
                 )}

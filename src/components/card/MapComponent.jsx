@@ -7,6 +7,8 @@ import { CountriesRankingContext } from '../../context/CountriesRankingContext';
 import { DimensionContext } from '../../context/DimensionContext';
 import { ScoresContext } from '../../context/ScoresContext';
 import { YearDimensionContext } from '../../context/YearDimensionContext';
+import { useTranslation } from 'react-i18next';
+
 
 
 
@@ -28,6 +30,8 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
   const [selectedCountryData, setSelectedCountryData] = useState(null);
   const [popupPosition, setPopupPosition] = useState(null);
   const mapRef = useRef(null);
+  const { t } = useTranslation();
+
 
   const countriesRankingRef = useRef(countriesRanking);
 
@@ -304,13 +308,13 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
             <h3 className="text-xl font-bold">{country.countryName}</h3>
           </div>
           <div className="bg-gray-100 rounded-full px-3 py-1 text-sm">
-            Rank: #{currentRank}
+            {t('rank')}: #{currentRank}
           </div>
         </div>
 
         <div className="mb-4">
           <div className="flex justify-between items-center">
-            <div className="text-gray-600">Global Score:</div>
+            <div className="text-gray-600">{t('globalScore')}</div>
             <div className="flex items-center">
               <div className="w-32 bg-gray-200 rounded-full h-2.5 mr-2">
                 <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${globScore}%` }}></div>
@@ -323,7 +327,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
         <hr className="my-3" />
 
         <div className="space-y-2">
-          <h4 className="font-medium">Score Details</h4>
+          <h4 className="font-medium">{t('detailScore')}</h4>
           {yearDimensions && yearDimensions.map(dimension => (
             dimension.name && (
               <div key={dimension.id} className="flex justify-between items-center">

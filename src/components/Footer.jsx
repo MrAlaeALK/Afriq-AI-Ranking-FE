@@ -1,30 +1,33 @@
 import FooterColumn from "./FooterColumn";
+import { useTranslation } from 'react-i18next';
+
 
 
 const Footer = () => {
+  const {t} = useTranslation();
   return (
     <footer className="bg-gray-800 text-gray-300 py-12">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div>
             <h4 className="text-xl font-bold text-white mb-4">Afriq'<span className="text-green-400">AI</span></h4>
-            <p className="mb-4">Plateforme d'intelligence artificielle africaine pour l'analyse et la visualisation des données ouvertes</p>
+            <p className="mb-4">{t('platformDesc')}</p>
           </div>
 
           <FooterColumn title="Navigation">
             <ul className="space-y-2">
-              <li><a href="/" className="hover:text-purple-300 transition-colors">Accueil</a></li>
-              <li><a href="/carte" className="hover:text-purple-300 transition-colors">Carte</a></li>
-              <li><a href="/classement" className="hover:text-purple-300 transition-colors">Classement</a></li>
-              <li><a href="/comparer" className="hover:text-purple-300 transition-colors">Comparer</a></li>
+              <li><a href="/" className="hover:text-purple-300 transition-colors">{t('home')}</a></li>
+              <li><a href="/carte" className="hover:text-purple-300 transition-colors">{t('card')}</a></li>
+              <li><a href="/classement" className="hover:text-purple-300 transition-colors">{t('ranking')}</a></li>
+              <li><a href="/comparer" className="hover:text-purple-300 transition-colors">{t('compare')}</a></li>
               <li><a href="#" className="hover:text-purple-300 transition-colors">À propos</a></li>
             </ul>
           </FooterColumn>
 
           <FooterColumn title="Ressources">
             <ul className="space-y-2">
-              <li><a href="#" className="hover:text-purple-300 transition-colors">Méthodologie</a></li>
-              <li><a href="#" className="hover:text-purple-300 transition-colors">Sources de données</a></li>
+              <li><a href="#" className="hover:text-purple-300 transition-colors">{t('methodology')}</a></li>
+              <li><a href="#" className="hover:text-purple-300 transition-colors">{t('dataSource')}</a></li>
               <li><a href="#" className="hover:text-purple-300 transition-colors">API</a></li>
               <li><a href="#" className="hover:text-purple-300 transition-colors">Publications</a></li>
             </ul>
@@ -46,7 +49,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-8 text-sm text-center">
-          <p>&copy; 2025 Afriq'AI. Tous droits réservés.</p>
+          <p>&copy; {t('copyright')}</p>
         </div>
       </div>
     </footer>

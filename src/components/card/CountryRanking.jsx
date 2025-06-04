@@ -1,11 +1,12 @@
-// components/CountryRanking.js
 import { useNavigate } from 'react-router-dom';
 import { CountriesRankingContext } from '../../context/CountriesRankingContext';
 import { useContext } from 'react';
+import { useTranslation } from 'react-i18next';
 
 function CountryRanking({ colorScale = 'green-red' }) {
-  const {countriesRanking} = useContext(CountriesRankingContext)
+  const { countriesRanking } = useContext(CountriesRankingContext);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const handleRedirect = () => {
     navigate('/classement');
@@ -13,16 +14,21 @@ function CountryRanking({ colorScale = 'green-red' }) {
 
   return (
     <div className="w-full xl:w-1/3">
-      {/* following change of width and height of map (even if it does not feel so great) i changed h-full to h-auto here */}
-      <div className="bg-white p-6 rounded-xl shadow-md h-auto">  
-        <h3 className="text-xl font-semibold mb-4">Top 10 pays</h3>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md dark:shadow-gray-700 h-auto">
+        <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">{t('top')}</h3>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
               <tr>
-                <th className="pb-3 border-b text-left text-sm font-medium text-gray-500">Rang</th>
-                <th className="pb-3 border-b text-left text-sm font-medium text-gray-500">Pays</th>
-                <th className="pb-3 border-b text-right text-sm font-medium text-gray-500">Score</th>
+                <th className="pb-3 border-b border-gray-300 dark:border-gray-600 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {t('rank')}
+                </th>
+                <th className="pb-3 border-b border-gray-300 dark:border-gray-600 text-left text-sm font-medium text-gray-500 dark:text-gray-400">
+                  {t('country')}
+                </th>
+                <th className="pb-3 border-b border-gray-300 dark:border-gray-600 text-right text-sm font-medium text-gray-500 dark:text-gray-400">
+                  Score
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -34,8 +40,11 @@ function CountryRanking({ colorScale = 'green-red' }) {
         </div>
 
         <div className="mt-6">
-          <button className="w-full py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-md transition-colors" onClick={handleRedirect}>
-            Voir le classement complet
+          <button
+            className="w-full py-2 bg-purple-600 hover:bg-purple-700 dark:bg-purple-700 dark:hover:bg-purple-800 text-white font-medium rounded-md transition-colors"
+            onClick={handleRedirect}
+          >
+            {t('seeAllRanking')}
           </button>
         </div>
       </div>
@@ -72,9 +81,9 @@ function CountryRow({ country, colorScale }) {
   };
 
   return (
-    <tr className="hover:bg-gray-50">
-      <td className="py-3 text-gray-800">{country.rank}</td>
-      <td className="py-3 text-gray-800 flex items-center">
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700">
+      <td className="py-3 text-gray-800 dark:text-gray-200">{country.rank}</td>
+      <td className="py-3 text-gray-800 dark:text-gray-200 flex items-center">
         <img
           src={`/public/flags/${country.countryCode}.svg`}
           alt={`${country.countryName} flag`}
@@ -82,10 +91,14 @@ function CountryRow({ country, colorScale }) {
         />
         {country.countryName}
       </td>
-      <td className="py-3 text-right font-medium" style={{ color: getColorByScore(Number(country.finalScore)) }}>
+      <td
+        className="py-3 text-right font-medium"
+        style={{ color: getColorByScore(Number(country.finalScore)) }}
+      >
         {country.finalScore}
       </td>
     </tr>
   );
-};
+}
+
 export default CountryRanking;

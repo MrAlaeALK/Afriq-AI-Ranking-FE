@@ -2,11 +2,13 @@ import { DimensionContext } from "../../context/DimensionContext";
 import { ScoresContext } from "../../context/ScoresContext";
 import { useContext } from "react";
 import { YearDimensionContext } from "../../context/YearDimensionContext";
+import { useTranslation } from "react-i18next";
 
 const CountryTable = ({ filteredCountriesRanking, selectedCountries, onCountrySelect, requestSort, sortConfig  }) => {
 
   const {yearDimensions} = useContext(YearDimensionContext);
   const {scores} = useContext(ScoresContext);
+  const {t} = useTranslation();
   
   const getClassNamesFor = (name) => {
     if (!sortConfig) {
@@ -49,16 +51,16 @@ const getCriteriaColor = (dimension, dimensionsList) => {
 
   return (
     <div className="overflow-x-auto">
-      <table className="min-w-full bg-white border border-gray-200">
+      <table className="min-w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700">
         <thead>
-          <tr className="bg-gray-100">
+          <tr className="bg-gray-100 dark:bg-gray-800">
             <th className="w-12 py-3 px-4 text-left"></th>
             <th
-              className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
+              className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
               onClick={() => requestSort('rank')}
             >
               <div className="flex items-center">
-                Rang
+                {t('rank')}
                 <span className="ml-1">
                   {getClassNamesFor('rank') === 'ascending' ? '↑' : getClassNamesFor('rank') === 'descending' ? '↓' : '↕'}
                 </span>
@@ -66,18 +68,18 @@ const getCriteriaColor = (dimension, dimensionsList) => {
             </th>
             <th className="w-12 py-3 px-4 text-left"></th>
             <th
-              className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
+              className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
               onClick={() => requestSort('countryName')}
             >
               <div className="flex items-center">
-                Pays
+                {t('country')}
                 <span className="ml-1">
                   {getClassNamesFor('countryName') === 'ascending' ? '↑' : getClassNamesFor('countryName') === 'descending' ? '↓' : '↕'}
                 </span>
               </div>
             </th>
             <th
-              className="py-3 px-4 text-left font-medium text-gray-600 cursor-pointer hover:bg-gray-200"
+              className="py-3 px-4 text-left font-medium text-gray-600 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-700"
               onClick={() => requestSort('finalScore')}
             >
               <div className="flex items-center">
@@ -111,7 +113,7 @@ const getCriteriaColor = (dimension, dimensionsList) => {
           {filteredCountriesRanking.map((country) => (
             <tr
               key={country.countryName}
-              className={`border-t border-gray-200 ${selectedCountries.includes(country.countryName) ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
+              className={`border-t border-gray-200 dark:border-gray-700 ${selectedCountries.includes(country.countryName) ? 'bg-purple-50 dark:bg-purple-900' : 'hover:bg-gray-50 dark:hover:bg-gray-800'}`}
             >
               <td className="py-3 px-4">
                 <input
@@ -131,18 +133,18 @@ const getCriteriaColor = (dimension, dimensionsList) => {
                   className="w-10 h-10 object-contain"
                 />
               </td>
-              <td className="py-3 px-4 font-medium">
+              <td className="py-3 px-4 font-medium text-gray-900 dark:text-gray-100">
                 {country.countryName}
               </td>
               <td className="py-3 px-4">
                 <div className="flex items-center">
-                  <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
+                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5 mr-2">
                     <div
                       className="bg-purple-600 h-2.5 rounded-full"
                       style={{ width: `${country.finalScore || country.scores.global}%` }}
                     ></div>
                   </div>
-                  <span className="font-medium">{country.finalScore || country.scores.global}</span>
+                  <span className="font-medium text-gray-800 dark:text-white">{country.finalScore || country.scores.global}</span>
                 </div>
               </td>
 

@@ -1,7 +1,9 @@
 import CriteriaSelector from './CriteriaSelector';
+import { useTranslation } from 'react-i18next';
 
 const AdvancedFilters = ({ weights, setWeights, onWeightsChange }) => {
 
+  const {t} = useTranslation();
   const resetFilters = () => {
     const dimensions = {
       'odin': 40,
@@ -17,12 +19,12 @@ const AdvancedFilters = ({ weights, setWeights, onWeightsChange }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6">
-      <h3 className="text-xl font-bold mb-6">Choisissez votre critères personnalisées</h3>
+      <h3 className="text-xl font-bold mb-6">{t('choseCriteria')}</h3>
 
       <div className="mb-6">
-        <h4 className="font-medium text-gray-700 mb-4">Pondération personnalisée</h4>
+        <h4 className="font-medium text-gray-700 mb-4">{t('personalisedPond')}</h4>
         <p className="text-sm text-gray-600 mb-4">
-          Ajustez l'importance de chaque critère pour personnaliser le classement selon vos priorités.
+          {t('adjustment')}        
         </p>
 
         {/* Nouveau composant de sélection de critères */}
@@ -37,7 +39,7 @@ const AdvancedFilters = ({ weights, setWeights, onWeightsChange }) => {
           onClick={resetFilters}
           className="w-full px-4 py-2 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors"
         >
-          Réinitialiser
+          {t('reinitialise')}
         </button>
       </div>
     </div>

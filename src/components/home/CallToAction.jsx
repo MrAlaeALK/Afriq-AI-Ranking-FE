@@ -1,17 +1,27 @@
-// components/CallToAction.js
+import { useTranslation } from 'react-i18next';
 
 const CallToAction = () => {
+  const { t } = useTranslation();
+
   return (
-    <section className="py-16 bg-purple-700 text-white">
+    <section className="py-16 bg-purple-700 text-white dark:bg-purple-800 dark:text-white">
       <div className="container mx-auto px-4 text-center">
-        <h3 className="text-2xl md:text-3xl font-bold mb-6">Prêt à découvrir l'ouverture des données en Afrique?</h3>
-        <p className="text-xl text-purple-100 mb-8 max-w-2xl mx-auto">Explorez notre carte interactive et comparez les performances des pays africains en matière de données ouvertes et de développement.</p>
+        <h3 className="text-2xl md:text-3xl font-bold mb-6">{t('readyToExplore')}</h3>
+        <p className="text-xl text-purple-100 dark:text-purple-200 mb-8 max-w-2xl mx-auto">
+          {t('callToExplore')}
+        </p>
         <div className="flex justify-center gap-4 flex-wrap">
-          <a href="/carte" className="px-6 py-3 bg-white text-purple-700 font-medium rounded-lg hover:bg-purple-50 transition-colors shadow-md">
-            Explorer la carte
+          <a
+            href="/carte"
+            className="px-6 py-3 bg-white text-purple-700 font-medium rounded-lg hover:bg-purple-50 dark:bg-gray-100 dark:hover:bg-gray-200 transition-colors shadow-md"
+          >
+            {t('exploreCard')}
           </a>
-          <a href="#" className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg border border-purple-400 hover:bg-purple-800 transition-colors shadow-md">
-            En savoir plus
+          <a
+            href="#"
+            className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg border border-purple-400 hover:bg-purple-800 dark:bg-purple-700 dark:hover:bg-purple-900 transition-colors shadow-md"
+          >
+            {t('knowMore')}
           </a>
         </div>
       </div>

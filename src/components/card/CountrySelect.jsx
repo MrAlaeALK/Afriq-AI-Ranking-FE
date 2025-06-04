@@ -1,10 +1,12 @@
 import Select from 'react-select';
 import {useContext} from 'react';
 import { CountriesRankingContext } from '../../context/CountriesRankingContext';
+import { useTranslation } from 'react-i18next';
 
 const CountrySelect = ({onSelectCountry}) => {
 
   const {countriesRanking} = useContext(CountriesRankingContext)
+  const {t} = useTranslation();
 
   function fetchingcountriesRankingNames() {
     const countriesRankingNames = countriesRanking.map(country => ({
@@ -24,7 +26,7 @@ const CountrySelect = ({onSelectCountry}) => {
         options={fetchingcountriesRankingNames()}
         onChange={handleChange}
         isClearable
-        placeholder="Sélectionner un pays..."
+        placeholder={t('selectCountry')}
         styles={{
           control: (base) => ({
             ...base,
