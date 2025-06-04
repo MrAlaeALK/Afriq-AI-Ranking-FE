@@ -1,12 +1,12 @@
-import { useEffect, useState } from "react"
-import { Button } from "../../components/admin/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/admin/card"
-import { Input } from "../../components/admin/input"
-import { Label } from "../../components/admin/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/admin/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/admin/table"
-import { Badge } from "../../components/admin/badge"
-// import { CheckCircle, XCircle, Edit, Save, X, Upload } from "lucide-react"
+
+import { useState } from "react"
+import { Button } from "../../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
+import { Input } from "../../components/ui/input"
+import { Label } from "../../components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table"
+import { Badge } from "../../components/ui/badge"
 import { CheckCircle, XCircle, Edit, Save, X, Upload, Plus, Trash2, FileText } from "lucide-react"
 import {
   Dialog,
@@ -15,197 +15,126 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../components/admin/dialog"
-import { Textarea } from "../../components/admin/textarea"
-import { Separator } from "../../components/admin/separator"
-import { getAllCountries, getAllYears, getYearIndicators } from "../../services/api"
-import axios from "axios"
+} from "../../components/ui/dialog"
+import { Textarea } from "../../components/ui/textarea"
+import { Separator } from "../../components/ui/separator"
 
 export default function ScoresPage() {
-const [editValue, setEditValue] = useState(""); // input value while editing
-
-  // const [scores, setScores] = useState([
-  //   {
-  //     id: 1,
-  //     country: "Afrique du Sud",
-  //     indicator: "Publications de Recherche IA",
-  //     year: 2024,
-  //     rawScore: 45.2,
-  //     normalizedScore: 78.5,
-  //     validated: true,
-  //     lastUpdated: "2024-01-15",
-  //   },
-  //   {
-  //     id: 2,
-  //     country: "Égypte",
-  //     indicator: "Publications de Recherche IA",
-  //     year: 2024,
-  //     rawScore: 38.7,
-  //     normalizedScore: 72.1,
-  //     validated: true,
-  //     lastUpdated: "2024-01-15",
-  //   },
-  //   {
-  //     id: 3,
-  //     country: "Nigeria",
-  //     indicator: "Index Infrastructure Numérique",
-  //     year: 2024,
-  //     rawScore: 62.3,
-  //     normalizedScore: 69.7,
-  //     validated: false,
-  //     lastUpdated: "2024-01-10",
-  //   },
-  //   {
-  //     id: 4,
-  //     country: "Kenya",
-  //     indicator: "Stratégie IA Gouvernementale",
-  //     year: 2024,
-  //     rawScore: 7.2,
-  //     normalizedScore: 65.2,
-  //     validated: false,
-  //     lastUpdated: "2024-01-08",
-  //   },
-  // ])
+  const [scores, setScores] = useState([
+    {
+      id: 1,
+      country: "Afrique du Sud",
+      indicator: "Publications de Recherche IA",
+      year: 2024,
+      rawScore: 45.2,
+      normalizedScore: 78.5,
+      validated: true,
+      lastUpdated: "2024-01-15",
+    },
+    {
+      id: 2,
+      country: "Égypte",
+      indicator: "Publications de Recherche IA",
+      year: 2024,
+      rawScore: 38.7,
+      normalizedScore: 72.1,
+      validated: true,
+      lastUpdated: "2024-01-15",
+    },
+    {
+      id: 3,
+      country: "Nigeria",
+      indicator: "Index Infrastructure Numérique",
+      year: 2024,
+      rawScore: 62.3,
+      normalizedScore: 69.7,
+      validated: false,
+      lastUpdated: "2024-01-10",
+    },
+    {
+      id: 4,
+      country: "Kenya",
+      indicator: "Stratégie IA Gouvernementale",
+      year: 2024,
+      rawScore: 7.2,
+      normalizedScore: 65.2,
+      validated: false,
+      lastUpdated: "2024-01-08",
+    },
+  ])
 
   // File upload states
   const [uploadedFile, setUploadedFile] = useState(null)
-  const [uploadYear, setUploadYear] = useState(null)
-  const [detectedColumns, setDetectedColumns] = useState({})
+  const [uploadYear, setUploadYear] = useState("2024")
+  const [detectedColumns, setDetectedColumns] = useState([])
   const [countryColumnName, setCountryColumnName] = useState("")
   const [indicatorMappings, setIndicatorMappings] = useState([])
   const [uploadedScores, setUploadedScores] = useState([])
   const [showUploadPreview, setShowUploadPreview] = useState(false)
   const [editingUploadedScore, setEditingUploadedScore] = useState(null)
-   console.log(uploadedScores)
-
-
-  const [allYears, setAllYears] = useState([])
-  const [countries, setCountries] = useState([])
-  const [yearIndicators, setYearIndicators] = useState([])
-  const [error, setError] = useState(null)
-  const [selectedIndicators, setSelectedIndicators] = useState([])
-  console.log(typeof uploadedScores)
-
-  // console.log(uploadedScores?.find(s => s.countryName === "Morocco"))
-  console.log(uploadedScores)
-
-
-    useEffect(() => {
-      const fetchAllCountries = async () => await getAllCountries()
-        .then(res => {
-            if (res.status === 'success') {
-                setCountries(res.data)
-                // setUploadYear(Math.max(...res.data))
-            }
-            else {
-                setError(res.message)
-            }
-        }
-    )
-    .catch(error => console.log(error))
-  
-    fetchAllCountries()
-    },[])
-      const fetchYearIndicators = async () => await getYearIndicators(uploadYear)
-      .then(res => {
-          if (res.status === 'success') {
-              setYearIndicators(res.data)
-          }
-          else {
-              setError(res.message)
-          }
-      }
-  )
-  .catch(error => console.log(error))
-
-  useEffect(() => {
-    if (!uploadYear) return
-  fetchYearIndicators()
-  },[uploadYear])
-
-  useEffect(() => {
-    setSelectedIndicators(yearIndicators.filter(i => !indicatorMappings.some((mapping) => (mapping.indicatorId === i.id))))
-  },[yearIndicators, indicatorMappings])
-
-    useEffect(() => {
-      const fetchAllYears = async () => await getAllYears()
-        .then(res => {
-            if (res.status === 'success') {
-                setAllYears(res.data)
-                setUploadYear(Math.max(...res.data))
-            }
-            else {
-                setError(res.message)
-            }
-        }
-    )
-    .catch(error => console.log(error))
-  
-    fetchAllYears()
-    },[])
 
   // Regular states
-  // const [editingScore, setEditingScore] = useState(null)
-  // const [selectedIndicator, setSelectedIndicator] = useState("")
-  // const [selectedYear, setSelectedYear] = useState("2024")
-  // const [selectedCountry, setSelectedCountry] = useState("")
+  const [editingScore, setEditingScore] = useState(null)
+  const [selectedIndicator, setSelectedIndicator] = useState("")
+  const [selectedYear, setSelectedYear] = useState("2024")
+  const [selectedCountry, setSelectedCountry] = useState("")
 
-  // const countries = [
-  //   "Algérie",
-  //   "Angola",
-  //   "Bénin",
-  //   "Botswana",
-  //   "Burkina Faso",
-  //   "Burundi",
-  //   "Cameroun",
-  //   "Cap-Vert",
-  //   "République Centrafricaine",
-  //   "Tchad",
-  //   "Comores",
-  //   "Congo",
-  //   "République Démocratique du Congo",
-  //   "Djibouti",
-  //   "Égypte",
-  //   "Guinée Équatoriale",
-  //   "Érythrée",
-  //   "Eswatini",
-  //   "Éthiopie",
-  //   "Gabon",
-  //   "Gambie",
-  //   "Ghana",
-  //   "Guinée",
-  //   "Guinée-Bissau",
-  //   "Côte d'Ivoire",
-  //   "Kenya",
-  //   "Lesotho",
-  //   "Libéria",
-  //   "Libye",
-  //   "Madagascar",
-  //   "Malawi",
-  //   "Mali",
-  //   "Mauritanie",
-  //   "Maurice",
-  //   "Maroc",
-  //   "Mozambique",
-  //   "Namibie",
-  //   "Niger",
-  //   "Nigeria",
-  //   "Rwanda",
-  //   "São Tomé-et-Príncipe",
-  //   "Sénégal",
-  //   "Seychelles",
-  //   "Sierra Leone",
-  //   "Somalie",
-  //   "Afrique du Sud",
-  //   "Soudan du Sud",
-  //   "Soudan",
-  //   "Tanzanie",
-  //   "Togo",
-  //   "Tunisie",
-  //   "Ouganda",
-  //   "Zambie",
-  //   "Zimbabwe",
-  // ]
+  const countries = [
+    "Algérie",
+    "Angola",
+    "Bénin",
+    "Botswana",
+    "Burkina Faso",
+    "Burundi",
+    "Cameroun",
+    "Cap-Vert",
+    "République Centrafricaine",
+    "Tchad",
+    "Comores",
+    "Congo",
+    "République Démocratique du Congo",
+    "Djibouti",
+    "Égypte",
+    "Guinée Équatoriale",
+    "Érythrée",
+    "Eswatini",
+    "Éthiopie",
+    "Gabon",
+    "Gambie",
+    "Ghana",
+    "Guinée",
+    "Guinée-Bissau",
+    "Côte d'Ivoire",
+    "Kenya",
+    "Lesotho",
+    "Libéria",
+    "Libye",
+    "Madagascar",
+    "Malawi",
+    "Mali",
+    "Mauritanie",
+    "Maurice",
+    "Maroc",
+    "Mozambique",
+    "Namibie",
+    "Niger",
+    "Nigeria",
+    "Rwanda",
+    "São Tomé-et-Príncipe",
+    "Sénégal",
+    "Seychelles",
+    "Sierra Leone",
+    "Somalie",
+    "Afrique du Sud",
+    "Soudan du Sud",
+    "Soudan",
+    "Tanzanie",
+    "Togo",
+    "Tunisie",
+    "Ouganda",
+    "Zambie",
+    "Zimbabwe",
+  ]
 
   // Mock indicators by year - in real app this would come from your backend
   const indicatorsByYear = {
@@ -229,73 +158,41 @@ const [editValue, setEditValue] = useState(""); // input value while editing
     ],
   }
 
-  // const indicators = [
-  //   "Publications de Recherche IA",
-  //   "Index Infrastructure Numérique",
-  //   "Stratégie IA Gouvernementale",
-  //   "Bassin de Talents IA",
-  //   "Écosystème d'Innovation",
-  // ]
+  const indicators = [
+    "Publications de Recherche IA",
+    "Index Infrastructure Numérique",
+    "Stratégie IA Gouvernementale",
+    "Bassin de Talents IA",
+    "Écosystème d'Innovation",
+  ]
 
   // Simulate file upload and column detection
-  const handleFileUpload = async (event) => {
+  const handleFileUpload = (event) => {
     const file = event.target.files?.[0]
     if (file) {
       setUploadedFile(file)
       // Simulate backend column detection
-          const formData = new FormData();
-    formData.append("file", file);
-    //     // Debugging: log each entry in formData
-    // for (let [key, value] of formData.entries()) {
-    //   console.log(`${key}:`, value);
-    // }
-
-    try{
-    const response = await axios.post('http://localhost:8080/api/v1/admin/dashboard/uploadFile', formData)
-      // .then(response => response.data)
-      const res = response.data;
-      // console.log(res)
-      // .then(res => {
-        if(res.status === 'success'){
-          // console.log(res.data)
-          setDetectedColumns(res.data)
-          setCountryColumnName(res.data.countryColumn)
-          setIndicatorMappings([
+      const mockColumns = [
+        "Country",
+        "AI_Research_Publications",
+        "Digital_Infrastructure",
+        "Government_AI_Strategy",
+        "AI_Talent_Pool",
+        "Innovation_Ecosystem",
+      ]
+      setDetectedColumns(mockColumns)
+      setCountryColumnName("Country")
+      setIndicatorMappings([
         {
-          columnName: res.data.indicatorColumns[0],
-          indicatorId: yearIndicators?.[0]?.id || "",
+          columnName: "AI_Research_Publications",
+          indicatorId: indicatorsByYear[uploadYear]?.[0]?.id || "",
         },
       ])
-        }
-        else{
-          console.log(res.message)
-          setError(res.message)
-        }
-      // })
-    } catch (err) {
-      console.error('Error submitting file', err);
-    }
-      // const mockColumns = [
-      //   "Country",
-      //   "AI_Research_Publications",
-      //   "Digital_Infrastructure",
-      //   "Government_AI_Strategy",
-      //   "AI_Talent_Pool",
-      //   "Innovation_Ecosystem",
-      // ]
-      // setDetectedColumns(mockColumns)
-      // setCountryColumnName("Country")
-      // setIndicatorMappings([
-      //   {
-      //     columnName: "AI_Research_Publications",
-      //     indicatorId: indicatorsByYear[uploadYear]?.[0]?.id || "",
-      //   },
-      // ])
     }
   }
 
   const addIndicatorMapping = () => {
-    const availableColumns = detectedColumns.indicatorColumns.filter(
+    const availableColumns = detectedColumns.filter(
       (col) => col !== countryColumnName && !indicatorMappings.some((mapping) => mapping.columnName === col),
     )
     if (availableColumns.length > 0) {
@@ -319,81 +216,27 @@ const [editValue, setEditValue] = useState(""); // input value while editing
     setIndicatorMappings(newMappings)
   }
 
-  const validateUpload = async () => {
+  const validateUpload = () => {
     // Simulate data extraction based on selected columns and mappings
-    // const mockData = [
-    //   { id: 1, country: "Afrique du Sud", AI_Research_Publications: 45.2, Digital_Infrastructure: 78.5 },
-    //   { id: 2, country: "Égypte", AI_Research_Publications: 38.7, Digital_Infrastructure: 72.1 },
-    //   { id: 3, country: "Nigeria", AI_Research_Publications: 35.1, Digital_Infrastructure: 69.7 },
-    //   { id: 4, country: "Kenya", AI_Research_Publications: 28.9, Digital_Infrastructure: 65.2 },
-    //   { id: 5, country: "Maroc", AI_Research_Publications: 31.4, Digital_Infrastructure: 62.8 },
-    // ]
-    try{
-      const formData = new FormData()
-      formData.append('file', uploadedFile);
-      const columnsDTO = {
-        countryColumn: detectedColumns.countryColumn,
-        indicatorColumns: indicatorMappings,
-      };
-
-      // formData.append('columns', JSON.stringify(columnsDTO));
-      formData.append('columns', new Blob([JSON.stringify(columnsDTO)], { type: 'application/json' }))
-    const response = await axios.post(
-      'http://localhost:8080/api/v1/admin/dashboard/validate_fetched_columns',
-      formData,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      }
-    );
-      const res = response.data
-        if(res.status === 'success'){
-          // setDetectedColumns(res.data)
-          // setCountryColumnName(res.data.countryColumn)
-          setUploadedScores(res.data.filter(s => countries.some(c => c.code === s.countryCode)))
-        }
-        else{
-          setError(res.message)
-        }
-    } catch (err) {
-      console.error('Error getting scores', err);
-    }
-    // setUploadedScores(mockData)
+    const mockData = [
+      { id: 1, country: "Afrique du Sud", AI_Research_Publications: 45.2, Digital_Infrastructure: 78.5 },
+      { id: 2, country: "Égypte", AI_Research_Publications: 38.7, Digital_Infrastructure: 72.1 },
+      { id: 3, country: "Nigeria", AI_Research_Publications: 35.1, Digital_Infrastructure: 69.7 },
+      { id: 4, country: "Kenya", AI_Research_Publications: 28.9, Digital_Infrastructure: 65.2 },
+      { id: 5, country: "Maroc", AI_Research_Publications: 31.4, Digital_Infrastructure: 62.8 },
+    ]
+    setUploadedScores(mockData)
     setShowUploadPreview(true)
   }
 
-  const validateAllUploadedScores = async () => {
+  const validateAllUploadedScores = () => {
     // Here you would process and save all uploaded scores
-    // console.log("Validating all uploaded scores:", {
-    //   year: uploadYear,
-    //   countryColumn: countryColumnName,
-    //   indicatorMappings,
-    //   scores: uploadedScores,
-    // })
-    try{
-   const response = await axios.post('http://localhost:8080/api/v1/admin/dashboard/validate_scores', {
+    console.log("Validating all uploaded scores:", {
       year: uploadYear,
-      validatedScores: uploadedScores
+      countryColumn: countryColumnName,
+      indicatorMappings,
+      scores: uploadedScores,
     })
-    const res = response.data
-    if(res.status='success'){
-      console.log(res.data)
-    }
-      // .then(response => response.data)
-      // .then(res => {
-      //   if(res.status === 'success'){
-      //     // setDetectedColumns(res.data)
-      //     // setCountryColumnName(res.data.countryColumn)
-      //     // setUploadedScores(res.data)
-      //   }
-      //   else{
-      //     setError(res.message)
-      //   }
-      // })
-    } catch (err) {
-      console.error('Error sending validated scores', err);
-    }
     // Reset upload state
     setUploadedFile(null)
     setUploadYear("2024")
@@ -405,32 +248,32 @@ const [editValue, setEditValue] = useState(""); // input value while editing
   }
 
   const deleteUploadedScore = (id) => {
-    setUploadedScores(uploadedScores.filter((score) => score.countryCode !== id))
+    setUploadedScores(uploadedScores.filter((score) => score.id !== id))
   }
 
-  // const handleEdit = (id) => {
-  //   setEditingScore(id)
-  // }
+  const handleEdit = (id) => {
+    setEditingScore(id)
+  }
 
-  // const handleSave = (id) => {
-  //   setEditingScore(null)
-  // }
+  const handleSave = (id) => {
+    setEditingScore(null)
+  }
 
-  // const handleCancel = () => {
-  //   setEditingScore(null)
-  // }
+  const handleCancel = () => {
+    setEditingScore(null)
+  }
 
-  // const handleValidate = (id) => {
-  //   setScores(scores.map((score) => (score.id === id ? { ...score, validated: !score.validated } : score)))
-  // }
+  const handleValidate = (id) => {
+    setScores(scores.map((score) => (score.id === id ? { ...score, validated: !score.validated } : score)))
+  }
 
-  // const filteredScores = scores.filter((score) => {
-  //   return (
-  //     (!selectedIndicator || score.indicator === selectedIndicator) &&
-  //     (!selectedYear || score.year.toString() === selectedYear) &&
-  //     (!selectedCountry || score.country === selectedCountry)
-  //   )
-  // })
+  const filteredScores = scores.filter((score) => {
+    return (
+      (!selectedIndicator || score.indicator === selectedIndicator) &&
+      (!selectedYear || score.year.toString() === selectedYear) &&
+      (!selectedCountry || score.country === selectedCountry)
+    )
+  })
 
   return (
     <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
@@ -465,23 +308,20 @@ const [editValue, setEditValue] = useState(""); // input value while editing
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="upload-year">Année</Label>
-                    <Select 
-                    value={uploadYear} 
-                    onValueChange={setUploadYear}
-                    >
+                    <Select value={uploadYear} onValueChange={setUploadYear}>
                       <SelectTrigger>
                         <SelectValue placeholder="Sélectionner une année" />
                       </SelectTrigger>
                       <SelectContent>
-                        {allYears.map((year) => (
-                          <SelectItem key={String(year)} value={String(year)}>{year}</SelectItem>
-                        ))}
+                        <SelectItem value="2024">2024</SelectItem>
+                        <SelectItem value="2023">2023</SelectItem>
+                        <SelectItem value="2022">2022</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                {Object.keys(detectedColumns).length > 0 && (
+                {detectedColumns.length > 0 && (
                   <>
                     <Separator />
                     <div className="space-y-4">
@@ -542,26 +382,17 @@ const [editValue, setEditValue] = useState(""); // input value while editing
                                 </Label>
                                 <Select
                                   value={mapping.indicatorId}
-                                  onValueChange={(value) => updateIndicatorMapping(index, "indicatorId", Number(value))}
+                                  onValueChange={(value) => updateIndicatorMapping(index, "indicatorId", value)}
                                 >
                                   <SelectTrigger>
                                     <SelectValue placeholder="Sélectionner un indicateur" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {(() => {
-                                      const selectedIds = indicatorMappings
-                                        .map((m, i) => i !== index ? m.indicatorId : null)
-                                        .filter((id) => id !== null);
-
-                                      const availableIndicators = yearIndicators.filter(
-                                        (indicator) =>
-                                          !selectedIds.includes(indicator.id) || indicator.id === mapping.indicatorId
-                                      );
-                                      return availableIndicators.map((indicator => (
-                                        <SelectItem key={indicator.id} value={indicator.id}>
-                                          {indicator.name}
-                                        </SelectItem>
-                                      )))})()}
+                                    {indicatorsByYear[uploadYear]?.map((indicator) => (
+                                      <SelectItem key={indicator.id} value={indicator.id}>
+                                        {indicator.name}
+                                      </SelectItem>
+                                    ))}
                                   </SelectContent>
                                 </Select>
                               </div>
@@ -588,7 +419,7 @@ const [editValue, setEditValue] = useState(""); // input value while editing
             </DialogContent>
           </Dialog>
 
-          {/* <Dialog>
+          <Dialog>
             <DialogTrigger asChild>
               <Button>
                 <Plus className="mr-2 h-4 w-4" />
@@ -670,11 +501,11 @@ const [editValue, setEditValue] = useState(""); // input value while editing
                 <Button>Ajouter Score</Button>
               </div>
             </DialogContent>
-          </Dialog> */}
+          </Dialog>
         </div>
       </div>
 
-      {/* <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Total Scores</CardTitle>
@@ -707,7 +538,7 @@ const [editValue, setEditValue] = useState(""); // input value while editing
             <div className="text-2xl font-bold">{new Set(scores.map((s) => s.country)).size}</div>
           </CardContent>
         </Card>
-      </div> */}
+      </div>
 
       {/* Upload Preview Section */}
       {showUploadPreview && uploadedScores.length > 0 && (
@@ -732,30 +563,28 @@ const [editValue, setEditValue] = useState(""); // input value while editing
                 <TableRow>
                   <TableHead>Pays</TableHead>
                   {indicatorMappings.map((mapping) => {
-                    const indicator = yearIndicators?.find((ind) => ind.id === mapping.indicatorId)
+                    const indicator = indicatorsByYear[uploadYear]?.find((ind) => ind.id === mapping.indicatorId)
                     return <TableHead key={mapping.columnName}>{indicator?.name || mapping.columnName}</TableHead>
                   })}
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
-              {/* <TableBody>
-                {countries.map((country) => (
-                  <TableRow key={country.id}>
-                    <TableCell className="font-medium">{country.name}</TableCell>
-                    {indicatorMappings.map((mapping) => {
-                      // console.log(uploadedScores)
-                      return (
-                      <TableCell key={mapping.indicatorId}>
-                        {editingUploadedScore === `${country.name}_${indicatorMappings[0]?.indicatorId}` ? (
-                          <Input type="number" defaultValue={uploadedScores.find(s => s.indicatorId === mapping.indicatorId && s.countryName === country.name).score} className="w-20" />
+              <TableBody>
+                {uploadedScores.map((score) => (
+                  <TableRow key={score.id}>
+                    <TableCell className="font-medium">{score.country}</TableCell>
+                    {indicatorMappings.map((mapping) => (
+                      <TableCell key={mapping.columnName}>
+                        {editingUploadedScore === score.id ? (
+                          <Input type="number" defaultValue={score[mapping.columnName]} className="w-20" />
                         ) : (
-                          uploadedScores.find(s => s.indicatorId === mapping.indicatorId && s.countryName === country.name)?.score
+                          score[mapping.columnName]
                         )}
                       </TableCell>
-                    )})}
+                    ))}
                     <TableCell>
                       <div className="flex space-x-2">
-                        {editingUploadedScore === `${country.name}_${indicatorMappings[0]?.indicatorId}`? (
+                        {editingUploadedScore === score.id ? (
                           <>
                             <Button variant="outline" size="sm" onClick={() => setEditingUploadedScore(null)}>
                               <Save className="h-4 w-4" />
@@ -766,10 +595,10 @@ const [editValue, setEditValue] = useState(""); // input value while editing
                           </>
                         ) : (
                           <>
-                            <Button variant="outline" size="sm" onClick={() => setEditingUploadedScore(country.id)}>
+                            <Button variant="outline" size="sm" onClick={() => setEditingUploadedScore(score.id)}>
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => deleteUploadedScore(country.code)}>
+                            <Button variant="outline" size="sm" onClick={() => deleteUploadedScore(score.id)}>
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </>
@@ -778,104 +607,14 @@ const [editValue, setEditValue] = useState(""); // input value while editing
                     </TableCell>
                   </TableRow>
                 ))}
-              </TableBody> */}
-
-<TableBody>
-  {countries
-    .filter(country => uploadedScores.some(s => s.countryName === country.name)) // only countries with scores
-    .map((country) => {
-      const scoresForCountry = uploadedScores.filter(s => s.countryName === country.name);
-
-      return (
-        <TableRow key={country.id}>
-          <TableCell className="font-medium">{country.name}</TableCell>
-
-          {indicatorMappings.map(mapping => {
-            const cellKey = `${country.name}_${mapping.indicatorId}`;
-            const isEditing = editingUploadedScore === cellKey;
-
-            const scoreObj = scoresForCountry.find(s => s.indicatorId === mapping.indicatorId);
-            const score = scoreObj?.score ?? "";
-
-            return (
-              <TableCell key={mapping.indicatorId}>
-                {isEditing ? (
-                  <Input
-                    type="number"
-                    value={editValue}
-                    className="w-20"
-                    onChange={e => setEditValue(e.target.value)}
-                  />
-                ) : (
-                  score
-                )}
-              </TableCell>
-            );
-          })}
-
-          <TableCell>
-            <div className="flex space-x-2">
-              {editingUploadedScore && editingUploadedScore.startsWith(country.name) ? (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    // Save edited score logic here
-                    const [countryName, indicatorId] = editingUploadedScore.split("_");
-                    const updatedScores = uploadedScores.map(s =>
-                      s.countryName === countryName && s.indicatorId.toString() === indicatorId
-                        ? { ...s, score: Number(editValue) }
-                        : s
-                    );
-                    setUploadedScores(updatedScores);
-                    setEditingUploadedScore(null);
-                    setEditValue("");
-                  }}>
-                    <Save className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    setEditingUploadedScore(null);
-                    setEditValue("");
-                  }}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    if(indicatorMappings.length > 0){
-                      setEditingUploadedScore(`${country.name}_${indicatorMappings[0].indicatorId}`);
-                      const scoreObj = uploadedScores.find(s =>
-                        s.countryName === country.name && s.indicatorId === indicatorMappings[0].indicatorId);
-                      setEditValue(scoreObj?.score ?? "");
-                    }
-                  }}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button variant="outline" size="sm" onClick={() => {
-                    // Delete all scores for this country
-                    setUploadedScores(uploadedScores.filter(s => s.countryName !== country.name));
-                    if (editingUploadedScore?.startsWith(country.name)) {
-                      setEditingUploadedScore(null);
-                      setEditValue("");
-                    }
-                  }}>
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          </TableCell>
-        </TableRow>
-      );
-    })}
-</TableBody>
-
+              </TableBody>
             </Table>
           </CardContent>
         </Card>
       )}
 
       {/* Main Scores Table */}
-      {/* <Card>
+      <Card>
         <CardHeader>
           <CardTitle>Gestion des Scores</CardTitle>
           <CardDescription>Gérer et valider les scores des indicateurs dans les pays africains</CardDescription>
@@ -1009,7 +748,7 @@ const [editValue, setEditValue] = useState(""); // input value while editing
             </TableBody>
           </Table>
         </CardContent>
-      </Card> */}
+      </Card>
     </div>
   )
 }

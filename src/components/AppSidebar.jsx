@@ -21,7 +21,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
-} from "../components/admin/sidebar";
+} from "./ui/sidebar";
 
 const navigationItems = [
   { title: "Tableau de Bord", url: "/admin", icon: Home },

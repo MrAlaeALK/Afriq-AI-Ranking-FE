@@ -1,43 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/admin/card"
-import { Badge } from "../../components/admin/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
+import { Badge } from "../../components/ui/badge"
 import { BarChart3, FileText, Target, Layers, Gauge, Trophy } from "lucide-react"
-import { useEffect, useState } from "react"
-import { getLatestYear, getRankingByYear } from "../../services/api"
 
 export default function Dashboard() {
-const [latestYear, setLatestYear] = useState(null)
-const [error, setError] = useState(null)
-const [latestRanking, setLatestRanking] = useState([])
-  useEffect(() => {
-    const fetchLatestYear = async () => await getLatestYear()
-      .then(res => {
-          if (res.status === 'success') {
-              setLatestYear(res.data.year)
-          }
-          else {
-              setError(res.message)
-          }
-      }
-  )
-  .catch(error => console.log(error))
-
-  fetchLatestYear()
-  },[])
-
-  useEffect(() => {
-    const fetchLatestRanking = async () => await getRankingByYear(latestYear)
-      .then(res => {
-        if (res.status === 'success') {
-          setLatestRanking(res.data)
-        }
-        else {
-          setError(res.message)
-        }
-      })
-      .catch(error => console.log(error))
-
-    fetchLatestRanking()
-  },[latestYear])
   const stats = [
     {
       title: "Total Pays",
@@ -116,7 +81,7 @@ const [latestRanking, setLatestRanking] = useState([])
       <div className="flex items-center justify-between space-y-2">
         <h2 className="text-3xl font-bold tracking-tight">Tableau de Bord</h2>
         <div className="flex items-center space-x-2">
-          <Badge variant="outline">Données {latestYear}</Badge>
+          <Badge variant="outline">Données 2024</Badge>
         </div>
       </div>
 
@@ -170,22 +135,23 @@ const [latestRanking, setLatestRanking] = useState([])
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {latestRanking.slice(0,5).map((country, index) => (
-                <div key={country.countryId} className="flex items-center space-x-4">
+              {[
+                { country: "Afrique du Sud", score: 78.5, change: "+2.3" },
+                { country: "Égypte", score: 72.1, change: "+1.8" },
+                { country: "Nigeria", score: 69.7, change: "+3.1" },
+                { country: "Kenya", score: 65.2, change: "+0.9" },
+                { country: "Maroc", score: 62.8, change: "+1.5" },
+              ].map((country, index) => (
+                <div key={country.country} className="flex items-center space-x-4">
                   <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center text-sm font-medium">
-                    {country.rank}
+                    {index + 1}
                   </div>
-                  <img
-                    src={`/public/flags/${country.countryCode}.svg`}
-                    alt={`${country.countryName} flag`}
-                    className="w-10 h-10 object-contain"
-                  />
                   <div className="flex-1">
-                    <p className="text-sm font-medium">{country.countryName}</p>
-                    <p className="text-sm text-muted-foreground">Score: {country.finalScore}</p>
+                    <p className="text-sm font-medium">{country.country}</p>
+                    <p className="text-sm text-muted-foreground">Score: {country.score}</p>
                   </div>
                   <Badge variant="outline" className="text-green-600">
-                    {country.countryRegion}
+                    {country.change}
                   </Badge>
                 </div>
               ))}

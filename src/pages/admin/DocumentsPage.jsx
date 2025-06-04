@@ -1,11 +1,12 @@
+
 import { useState } from "react"
-import { Button } from "../../components/admin/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/admin/card"
-import { Input } from "../../components/admin/input"
-import { Label } from "../../components/admin/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/admin/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/admin/table"
-import { Badge } from "../../components/admin/badge"
+import { Button } from "../../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
+import { Input } from "../../components/ui/input"
+import { Label } from "../../components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table"
+import { Badge } from "../../components/ui/badge"
 import { Upload, FileText, Eye, Trash2, Download } from "lucide-react"
 import {
   Dialog,
@@ -14,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../components/admin/dialog"
+} from "../../components/ui/dialog"
 
 export default function DocumentsPage() {
   const [documents, setDocuments] = useState([
@@ -61,9 +62,9 @@ export default function DocumentsPage() {
   const getStatusBadge = (status) => {
     const variants = {
       "en attente": "bg-yellow-100 text-yellow-800",
-      "traité": "bg-blue-100 text-blue-800",
-      "validé": "bg-green-100 text-green-800",
-      "erreur": "bg-red-100 text-red-800",
+      traité: "bg-blue-100 text-blue-800",
+      validé: "bg-green-100 text-green-800",
+      erreur: "bg-red-100 text-red-800",
     }
     return variants[status] || variants["en attente"]
   }
@@ -82,9 +83,7 @@ export default function DocumentsPage() {
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Télécharger Nouveau Document</DialogTitle>
-              <DialogDescription>
-                Télécharger un document contenant des scores pour un indicateur
-              </DialogDescription>
+              <DialogDescription>Télécharger un document contenant des scores pour un indicateur</DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">

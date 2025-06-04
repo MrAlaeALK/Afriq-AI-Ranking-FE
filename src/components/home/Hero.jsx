@@ -33,7 +33,7 @@ const Hero = () => {
           <div className="w-full md:w-1/2 flex justify-center">
 
             <img
-              src="/images/Cartography_of_Africa.svg"
+              src="/images/africa_map.svg"
               alt="Carte de l'Afrique"
               className="w-64 md:w-80 lg:w-96"
             />

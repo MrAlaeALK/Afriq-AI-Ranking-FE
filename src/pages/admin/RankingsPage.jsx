@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react"
-import { Button } from "../../components/admin/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/admin/card"
-import { Label } from "../../components/admin/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/admin/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/admin/table"
+
+import { useState } from "react"
+import { Button } from "../../components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
+import { Label } from "../../components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table"
 import { Trophy, TrendingUp, TrendingDown, Minus, Play, Download, Eye } from "lucide-react"
 import {
   Dialog,
@@ -12,171 +13,87 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../../components/admin/dialog"
-import { Progress } from "../../components/admin/progress"
-import { getAllYears, getRankingByYear, getScoresByYear } from "../../services/api"
-import axios from "axios"
+} from "../../components/ui/dialog"
+import { Progress } from "../../components/ui/progress"
 
 export default function RankingsPage() {
-  const [yearRanking, setYearRanking] = useState([])
+  const [rankings, setRankings] = useState([
+    {
+      rank: 1,
+      country: "Afrique du Sud",
+      overallScore: 78.5,
+      previousRank: 1,
+      change: 0,
+      dimensionScores: {
+        "Recherche & Développement": 82.3,
+        Infrastructure: 75.8,
+        "Capital Humain": 79.1,
+        "Politique & Gouvernance": 76.2,
+      },
+    },
+    {
+      rank: 2,
+      country: "Égypte",
+      overallScore: 72.1,
+      previousRank: 3,
+      change: 1,
+      dimensionScores: {
+        "Recherche & Développement": 78.9,
+        Infrastructure: 68.5,
+        "Capital Humain": 71.3,
+        "Politique & Gouvernance": 69.7,
+      },
+    },
+    {
+      rank: 3,
+      country: "Nigeria",
+      overallScore: 69.7,
+      previousRank: 2,
+      change: -1,
+      dimensionScores: {
+        "Recherche & Développement": 65.4,
+        Infrastructure: 72.1,
+        "Capital Humain": 73.8,
+        "Politique & Gouvernance": 67.5,
+      },
+    },
+    {
+      rank: 4,
+      country: "Kenya",
+      overallScore: 65.2,
+      previousRank: 4,
+      change: 0,
+      dimensionScores: {
+        "Recherche & Développement": 61.7,
+        Infrastructure: 69.8,
+        "Capital Humain": 68.4,
+        "Politique & Gouvernance": 60.9,
+      },
+    },
+    {
+      rank: 5,
+      country: "Maroc",
+      overallScore: 62.8,
+      previousRank: 6,
+      change: 1,
+      dimensionScores: {
+        "Recherche & Développement": 58.3,
+        Infrastructure: 66.1,
+        "Capital Humain": 64.7,
+        "Politique & Gouvernance": 62.1,
+      },
+    },
+  ])
 
-  // const [rankings, setRankings] = useState([
-  //   {
-  //     rank: 1,
-  //     country: "Afrique du Sud",
-  //     overallScore: 78.5,
-  //     previousRank: 1,
-  //     change: 0,
-  //     dimensionScores: {
-  //       "Recherche & Développement": 82.3,
-  //       Infrastructure: 75.8,
-  //       "Capital Humain": 79.1,
-  //       "Politique & Gouvernance": 76.2,
-  //     },
-  //   },
-  //   {
-  //     rank: 2,
-  //     country: "Égypte",
-  //     overallScore: 72.1,
-  //     previousRank: 3,
-  //     change: 1,
-  //     dimensionScores: {
-  //       "Recherche & Développement": 78.9,
-  //       Infrastructure: 68.5,
-  //       "Capital Humain": 71.3,
-  //       "Politique & Gouvernance": 69.7,
-  //     },
-  //   },
-  //   {
-  //     rank: 3,
-  //     country: "Nigeria",
-  //     overallScore: 69.7,
-  //     previousRank: 2,
-  //     change: -1,
-  //     dimensionScores: {
-  //       "Recherche & Développement": 65.4,
-  //       Infrastructure: 72.1,
-  //       "Capital Humain": 73.8,
-  //       "Politique & Gouvernance": 67.5,
-  //     },
-  //   },
-  //   {
-  //     rank: 4,
-  //     country: "Kenya",
-  //     overallScore: 65.2,
-  //     previousRank: 4,
-  //     change: 0,
-  //     dimensionScores: {
-  //       "Recherche & Développement": 61.7,
-  //       Infrastructure: 69.8,
-  //       "Capital Humain": 68.4,
-  //       "Politique & Gouvernance": 60.9,
-  //     },
-  //   },
-  //   {
-  //     rank: 5,
-  //     country: "Maroc",
-  //     overallScore: 62.8,
-  //     previousRank: 6,
-  //     change: 1,
-  //     dimensionScores: {
-  //       "Recherche & Développement": 58.3,
-  //       Infrastructure: 66.1,
-  //       "Capital Humain": 64.7,
-  //       "Politique & Gouvernance": 62.1,
-  //     },
-  //   },
-  // ])
-
-  const [selectedYear, setSelectedYear] = useState(null)
-  const [allYears, setAllYears] = useState([])
-  const [error, setError] = useState(null)
-  const [dimensionScores, setDimensionScores] = useState([])
+  const [selectedYear, setSelectedYear] = useState("2024")
   const [isGenerating, setIsGenerating] = useState(false)
 
-      useEffect(() => {
-        if (!selectedYear) return 
-        const fetchDimensionScores = async() => await getScoresByYear(selectedYear)
-            .then(res => {
-              if (res.status === 'success') {
-                  setDimensionScores(res.data)
-              }
-              else {
-                  setError(res.message)
-              }
-          }
-        )
-        .catch(error => console.log(error))
-        fetchDimensionScores()
-      },[selectedYear])
-
-              const fetchRankingByYear = async () => await getRankingByYear(selectedYear)
-          .then(res => {
-              if (res.status === 'success') {
-                  setYearRanking(res.data)
-              }
-              else {
-                  setError(res.message)
-              }
-          }
-      )
-      .catch(error => console.log(error))
-  
-          useEffect(() => {
-          if (!selectedYear) return 
-      fetchRankingByYear()
-      },[selectedYear])
-
-        const fetchAllYears = async () => await getAllYears()
-      .then(res => {
-          if (res.status === 'success') {
-              setAllYears(res.data)
-              setSelectedYear(Math.max(...res.data))
-          }
-          else {
-              setError(res.message)
-          }
-      }
-  )
-  .catch(error => console.log(error))
-
-    useEffect(() => {
-  fetchAllYears()
-  },[])
-
-
-  // const [isGenerating, setIsGenerating] = useState(false)
-
-  // const handleGenerateRanking = () => {
-  //   setIsGenerating(true)
-  //   // Simulate ranking generation
-  //   setTimeout(() => {
-  //     setIsGenerating(false)
-  //   }, 3000)
-  // }
-
-  const handleGenerateRanking =  async () => {
+  const handleGenerateRanking = () => {
     setIsGenerating(true)
-    try {
-      const response = await axios.post('http://localhost:8080/api/v1/admin/dashboard/rankings', {"year": selectedYear})
-      const res = response.data
-      if(res.status === 'success'){
-        fetchRankingByYear(selectedYear)
-        // setIsGenerating(false)
-      }
-      else{
-        setError(res.message)
-      }
-      // alert('Form submitted!');
-      // fetchYearDimensions(formData.year)
-      // fetchAllYears()
-      // setSelectedYear(payload.year)
-    } catch (err) {
-      console.error('Error submitting form', err);
-    }
-    finally{
+    // Simulate ranking generation
+    setTimeout(() => {
       setIsGenerating(false)
-    }
+    }, 3000)
   }
 
   const getRankChangeIcon = (change) => {
@@ -201,9 +118,9 @@ export default function RankingsPage() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-                  {allYears.map((year) => (
-                    <SelectItem key={year} value={year}>{year}</SelectItem>
-                  ))}
+              <SelectItem value="2024">2024</SelectItem>
+              <SelectItem value="2023">2023</SelectItem>
+              <SelectItem value="2022">2022</SelectItem>
             </SelectContent>
           </Select>
           <Button variant="outline">
@@ -217,7 +134,7 @@ export default function RankingsPage() {
         </div>
       </div>
 
-      {/* <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Pays Classés</CardTitle>
@@ -254,7 +171,7 @@ export default function RankingsPage() {
             <div className="text-sm text-muted-foreground">{new Date().toLocaleDateString("fr-FR")}</div>
           </CardContent>
         </Card>
-      </div> */}
+      </div>
 
       <Card>
         <CardHeader>
@@ -276,8 +193,8 @@ export default function RankingsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {yearRanking.map((ranking) => (
-                <TableRow key={ranking.countryId}>
+              {rankings.map((ranking) => (
+                <TableRow key={ranking.country}>
                   <TableCell>
                     <div className="flex items-center space-x-2">
                       {ranking.rank <= 3 && (
@@ -294,11 +211,11 @@ export default function RankingsPage() {
                       <span className="font-bold text-lg">#{ranking.rank}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium">{ranking.countryName}</TableCell>
+                  <TableCell className="font-medium">{ranking.country}</TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      <div className="font-bold text-lg">{ranking.finalScore}</div>
-                      <Progress value={ranking.finalScore} className="w-20" />
+                      <div className="font-bold text-lg">{ranking.overallScore}</div>
+                      <Progress value={ranking.overallScore} className="w-20" />
                     </div>
                   </TableCell>
                   <TableCell>
@@ -315,11 +232,11 @@ export default function RankingsPage() {
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {dimensionScores.filter(score => score.countryName === ranking.countryName).map((s) => (
-                        <div key={s.dimensionName} className="flex items-center space-x-2">
-                          <span className="text-xs text-muted-foreground w-20 truncate">{s.dimensionName}:</span>
-                          <span className="text-xs font-medium">{s.score}</span>
-                          <Progress value={s.score} className="w-12 h-1" />
+                      {Object.entries(ranking.dimensionScores).map(([dimension, score]) => (
+                        <div key={dimension} className="flex items-center space-x-2">
+                          <span className="text-xs text-muted-foreground w-20 truncate">{dimension}:</span>
+                          <span className="text-xs font-medium">{score}</span>
+                          <Progress value={score} className="w-12 h-1" />
                         </div>
                       ))}
                     </div>
@@ -333,9 +250,9 @@ export default function RankingsPage() {
                       </DialogTrigger>
                       <DialogContent className="sm:max-w-[600px]">
                         <DialogHeader>
-                          <DialogTitle>{ranking.countryName} - Répartition Détaillée</DialogTitle>
+                          <DialogTitle>{ranking.country} - Répartition Détaillée</DialogTitle>
                           <DialogDescription>
-                            Vue complète des scores de développement IA de {ranking.countryName}
+                            Vue complète des scores de développement IA de {ranking.country}
                           </DialogDescription>
                         </DialogHeader>
                         <div className="space-y-4">
@@ -346,18 +263,18 @@ export default function RankingsPage() {
                             </div>
                             <div>
                               <Label className="text-sm font-medium">Score Global</Label>
-                              <div className="text-2xl font-bold">{ranking.finalScore}</div>
+                              <div className="text-2xl font-bold">{ranking.overallScore}</div>
                             </div>
                           </div>
                           <div className="space-y-3">
                             <Label className="text-sm font-medium">Scores par Dimension</Label>
-                            {dimensionScores.filter(score => score.countryName === ranking.countryName).map((s) => (
-                              <div key={s.dimensionName} className="space-y-1">
+                            {Object.entries(ranking.dimensionScores).map(([dimension, score]) => (
+                              <div key={dimension} className="space-y-1">
                                 <div className="flex justify-between text-sm">
-                                  <span>{s.dimensionName}</span>
-                                  <span className="font-medium">{s.score}</span>
+                                  <span>{dimension}</span>
+                                  <span className="font-medium">{score}</span>
                                 </div>
-                                <Progress value={s.score} className="h-2" />
+                                <Progress value={score} className="h-2" />
                               </div>
                             ))}
                           </div>
