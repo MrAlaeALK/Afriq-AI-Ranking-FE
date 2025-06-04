@@ -12,3 +12,17 @@ export const getRankingByYear = (year) => apiClient.post("/rank/ranking", { "yea
 export const getScoresByYear = (year) => apiClient.post("/dimension_scores/get_scores_by_year", {"year": year }).then(response => response.data);
 export const getAllDimensions = () => apiClient.get("/dimension/dimensions").then(response => response.data);
 export const getYearDimensions = (year) => apiClient.post("/dimension/year_dimensions", {"year": year}).then(response => response.data)
+
+
+//added ones for admin ( besides the ones that are also inside the admin pages themselves which you do not see since i did not push the code )
+// //admin - dashboard
+// export const getLatestYear = () => apiClient.get("/rank/latest_year").then(response => response.data)
+// //admin - indicators page
+// export const getAllYears = () => apiClient.get("/dimension/all_years").then(response => response.data)
+// export const getYearIndicators = (year) => apiClient.post("/indicators/year_indicators", {"year": year}).then(response => response.data)
+// export const getAllLinkedDimensions = () => apiClient.get("/indicators/all_linked_dimensions").then(response => response.data)
+// //admiin - dimensions page
+// export const getAllIndicators = () => apiClient.get("/indicators").then(response => response.data)
+// export const getAllLinkedIndicators = () => apiClient.get("/dimension/all_linked_indicators").then(response => response.data)
+// // admin - scores page
+// export const getAllCountries = () => apiClient.get("/countries/all_countries").then(response => response.data)
