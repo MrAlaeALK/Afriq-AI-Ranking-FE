@@ -78,14 +78,14 @@ export const translateWithMyMemory = async (text, sourceLang = 'fr', targetLang 
         source: 'mymemory'
       });
       
-      console.log(`✅ Traduit (qualité: ${match}):`, translatedText.substring(0, 50) + '...');
+      console.log(` Traduit (qualité: ${match}):`, translatedText.substring(0, 50) + '...');
       return translatedText;
     } else {
       throw new Error('Réponse MyMemory invalide');
     }
     
   } catch (error) {
-    console.error('❌ Erreur MyMemory:', error.response?.data || error.message);
+    console.error('Erreur MyMemory:', error.response?.data || error.message);
     
     // Fallback: retourner le texte original
     return text;
