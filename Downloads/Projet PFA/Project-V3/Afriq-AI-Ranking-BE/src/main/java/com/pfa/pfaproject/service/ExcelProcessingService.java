@@ -14,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Service
@@ -60,8 +61,10 @@ public class ExcelProcessingService {
         }
 
         // Check file extension
-        if (!fileName.toLowerCase().endsWith(".xlsx") && !fileName.toLowerCase().endsWith(".xls")) {
-            throw new CustomException("Invalid file type. Must be .xls or .xlsx", HttpStatus.BAD_REQUEST);
+        if (!fileName.toLowerCase().endsWith(".xlsx") &&
+                !fileName.toLowerCase().endsWith(".xls") &&
+                !fileName.toLowerCase().endsWith(".csv")) {
+            throw new CustomException("Invalid file type. Must be .xls, .xlsx, or .csv", HttpStatus.BAD_REQUEST);
         }
     }
 
@@ -315,8 +318,8 @@ public class ExcelProcessingService {
         if (data.value().isNaN() || data.value() < 0) {
             return "Value must be a positive number";
         }
-        if (data.year() == null || data.year() < 2000) {
-            return "Year must be 2000 or later";
+        if (data.year() == null || data.year() > java.time.LocalDate.now().getYear()) {
+            return "Year must be valid and not in future";
         }
         return null; // No errors
     }

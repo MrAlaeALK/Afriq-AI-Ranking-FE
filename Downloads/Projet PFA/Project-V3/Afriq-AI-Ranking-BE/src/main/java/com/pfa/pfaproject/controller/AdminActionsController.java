@@ -63,7 +63,7 @@ public class AdminActionsController {
      * @return The created indicator category
      */
     @PostMapping("/dimensions")
-    public ResponseEntity<?> addCategory(@Valid @RequestBody Dimension dimension) {
+    public ResponseEntity<?> addDimension(@Valid @RequestBody Dimension dimension) {
         Dimension addDimension = adminBusinessService.addDimension(dimension);
         return ResponseEntity.status(HttpStatus.CREATED).body(ResponseWrapper.success(addDimension));
     }
