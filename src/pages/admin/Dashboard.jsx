@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
+import { Badge } from '../../components/ui/badge';
 import { BarChart3, Globe, TrendingUp, Calendar, Award, Target, Activity, AlertTriangle, Loader2, Info, ArrowUp, ArrowDown, Minus } from 'lucide-react';
 
 function Dashboard() {
