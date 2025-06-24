@@ -1,4 +1,4 @@
-import { getYearDimensions } from "../services/api";
+import { getYearDimensions } from "../services/publicService";
 import {createContext, useState, useEffect, useContext} from "react";
 import { YearContext } from "./YearContext";
 
@@ -12,18 +12,27 @@ export const YearDimensionProvider = ({children}) => {
 
 
     useEffect(() => {
-    const fetchYearDimensions = async () => await getYearDimensions(year)
-        .then(res => {
-            if(res.status==='success'){
-                setDefaultYearDimensions(res.data)
-                setYearDimensions(res.data)
-            }
-            else{
-                setYearDimensionsError(res.message)
-            }
-        })
-        .catch(error => console.log(error))
+    // const fetchYearDimensions = async () => await getYearDimensions(year)
+    //     .then(res => {
+    //         if(res.status==='success'){
+    //             setDefaultYearDimensions(res.data)
+    //             setYearDimensions(res.data)
+    //         }
+    //         else{
+    //             setYearDimensionsError(res.message)
+    //         }
+    //     })
+    //     .catch(error => console.log(error))
 
+    const fetchYearDimensions = async () => {
+        try{
+            const res = await getYearDimensions(year)
+            setDefaultYearDimensions(res)
+            setYearDimensions(res)
+        }
+        catch(error){
+            console.log(error.message)
+        }}
         fetchYearDimensions()
     }, [year])
     

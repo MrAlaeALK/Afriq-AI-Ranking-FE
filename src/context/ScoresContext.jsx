@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState, useContext } from "react";
-import { getScoresByYear } from "../services/api";
+import { getScoresByYear } from "../services/publicService";
 import { YearContext } from "./YearContext";
 
 export const ScoresContext = createContext();
@@ -12,17 +12,25 @@ export const ScoresProvider = ({ children }) => {
 
 
     useEffect(() => {
-        const fetchScoresByYear = async () => await getScoresByYear(year)
-            .then(res => {
-                if (res.status === "success") {
-                    setScores(res.data)
-                }
-                else {
-                    setScoresError(res.message)
-                }
+        // const fetchScoresByYear = async () => await getScoresByYear(year)
+        //     .then(res => {
+        //         if (res.status === "success") {
+        //             setScores(res.data)
+        //         }
+        //         else {
+        //             setScoresError(res.message)
+        //         }
+        //     }
+        //     )
+        //     .catch(error => setScoresError("server or network error"))
+        const fetchScoresByYear = async () => {
+            try{
+                const res = await getScoresByYear(year)
+                setScores(res)
             }
-            )
-            .catch(error => setScoresError("server or network error"))
+            catch(error){
+                console.log(error.message)
+            }}
 
             fetchScoresByYear()
     }, [year])

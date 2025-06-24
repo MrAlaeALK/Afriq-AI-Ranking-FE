@@ -25,7 +25,6 @@ import {
 
 const navigationItems = [
   { title: "Tableau de Bord", url: "/admin", icon: Home },
-  { title: "Documents", url: "/admin/documents", icon: FileText },
   { title: "Indicateurs", url: "/admin/indicators", icon: Target },
   { title: "Dimensions", url: "/admin/dimensions", icon: Layers },
   { title: "Scores", url: "/admin/scores", icon: Gauge },

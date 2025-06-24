@@ -167,7 +167,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
 
   const getGeoJSONStyle = (feature) => {
     const countryCode =
-      feature.properties?.["ISO3166-1-Alpha-2"] ||
+      feature.properties?.["ISO3166-1-Alpha-3"] ||
       'Unknown country';
 
     // Find country data from rankedcountriesRanking to get the most up-to-date data
@@ -198,7 +198,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
 
   const onEachFeature = (feature, layer) => {
     const countryCode =
-      feature.properties?.["ISO3166-1-Alpha-2"] ||
+      feature.properties?.["ISO3166-1-Alpha-3"] ||
       'Unknown country';
 
     layer.on({

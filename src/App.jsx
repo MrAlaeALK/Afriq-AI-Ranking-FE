@@ -21,10 +21,16 @@ import IndicatorsPage from './pages/admin/IndicatorsPage';
 import DimensionsPage from './pages/admin/DimensionsPage';
 import ScoresPage from './pages/admin/ScoresPage';
 import RankingsPage from './pages/admin/RankingsPage';
+import PrivateRoute from './components/PrivateRoute';
+import LoginPage from './pages/auth/LoginPage';
+import { AuthProvider } from './context/AuthContext';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage';
 
 function App() {
 
   return (
+    <AuthProvider>
     <Router>
       <Routes>
         <Route 
@@ -43,6 +49,7 @@ function App() {
             </YearProvider>
           }
         >
+          {/* <Route index element={<PrivateRoute><HomePage /></PrivateRoute>} /> */}
           <Route index element={<HomePage />} />
           <Route path="/carte" element={<MapPage />} />
           <Route path="/classement" element={<RankingPage />} />
@@ -50,9 +57,13 @@ function App() {
           <Route path="/contact" element={<ContactPage/>} />
         </Route>
 
-        <Route path="/admin" element={<AdminLayout/>}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+        <Route path="/admin" element={<PrivateRoute><AdminLayout/></PrivateRoute>}>
+        {/* <Route path="/admin" element={<AdminLayout/>}> */}
           <Route index element={<Dashboard/>}/>
-          <Route path="documents" element={<DocumentsPage/>}/>
           <Route path="indicators" element={<IndicatorsPage/>}/>
           <Route path="dimensions" element={<DimensionsPage/>}/>
           <Route path="scores" element={<ScoresPage/>}/>
@@ -60,6 +71,7 @@ function App() {
         </Route>
       </Routes>
     </Router>
+    </AuthProvider>
   );
 }
 

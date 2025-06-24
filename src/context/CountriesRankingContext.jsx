@@ -1,5 +1,5 @@
 import { createContext, useEffect, useState, useContext } from "react";
-import { getRankingByYear } from "../services/api";
+import { getRankingByYear } from "../services/publicService";
 import { YearContext } from "./YearContext";
 
 export const CountriesRankingContext = createContext();
@@ -12,17 +12,25 @@ export const CountriesRankingProvider = ({ children }) => {
 
 
     useEffect(() => {
-        const fetchCountriesRanking = async () => await getRankingByYear(year)
-            .then(res => {
-                if (res.status === 'success') {
-                    setCountriesRanking(res.data)
-                }
-                else {
-                    setCountriesRankingError(res.message)
-                }
-            }
-            )
-            .catch(error => console.log(error))
+        // const fetchCountriesRanking = async () => await getRankingByYear(year)
+        //     .then(res => {
+        //         if (res.status === 'success') {
+        //             setCountriesRanking(res.data)
+        //         }
+        //         else {
+        //             setCountriesRankingError(res.message)
+        //         }
+        //     }
+        //     )
+        //     .catch(error => console.log(error))
+
+        const fetchCountriesRanking = async () => {
+            try{
+                const res = await getRankingByYear(year)
+                setCountriesRanking(res)
+            }catch(error){
+                console.log(error.message)
+            }}
 
             fetchCountriesRanking()
     }, [year])
