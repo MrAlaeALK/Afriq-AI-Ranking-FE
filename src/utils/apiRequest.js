@@ -25,9 +25,36 @@ export const post = async (url, data, fallbackMessage) => {
   }
 };
 
+export const put = async (url, data, fallbackMessage) => {
+  try {
+    const response = await apiClient.put(url, data);
+    return handleApiResponse(response);
+  } catch (error) {
+    handleApiError(error, fallbackMessage);
+  }
+};
+
+export const patch = async (url, data, fallbackMessage) => {
+  try {
+    const response = await apiClient.patch(url, data);
+    return handleApiResponse(response);
+  } catch (error) {
+    handleApiError(error, fallbackMessage);
+  }
+};
+
 export const del = async (url, fallbackMessage) => {
   try {
     const response = await apiClient.delete(url);
+    return handleApiResponse(response);
+  } catch (error) {
+    handleApiError(error, fallbackMessage);
+  }
+};
+
+export const delWithBody = async (url, data, fallbackMessage) => {
+  try {
+    const response = await apiClient.delete(url, { data });
     return handleApiResponse(response);
   } catch (error) {
     handleApiError(error, fallbackMessage);

@@ -1,7 +1,7 @@
 import axios from "axios";
 import authService from "../services/authService";
 
-const API_BASE_URL = "http://localhost:8080/api/v1/admin/dashboard"; //need to store it later in .env instead of this
+const API_BASE_URL = "http://localhost:8080/api/v1"; //need to store it later in .env instead of this
 
 const apiClient = axios.create({
     baseURL: API_BASE_URL,

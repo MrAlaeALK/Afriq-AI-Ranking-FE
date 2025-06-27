@@ -22,9 +22,13 @@ const AddScoreForm = ({ scores, setScores }) => {
         try {
           const data = await getYearIndicators(formData.year)
           setIndicators(data)
+          if (data.length === 0) {
+            setError(`Aucun indicateur trouvé pour l'année ${formData.year}. Veuillez d'abord créer des indicateurs pour cette année.`)
+          }
         }
         catch (error) {
           console.log(error.message)
+          setError(`Erreur lors du chargement des indicateurs: ${error.message}`)
         }
       }
     }
@@ -46,25 +50,30 @@ const AddScoreForm = ({ scores, setScores }) => {
 
   useEffect(() => {
     async function fetchAllCountries() {
-      try {
-        const data = await getAllCountries()
-        const filteredCountries = data.filter(
-          (c) =>
-            !scores.some(
-              (s) =>
-                s.countryName === c.name &&
-                s.indicatorName === formData.indicatorName &&
-                s.year === formData.year
-            )
-        )
-        setCountries(filteredCountries)
-      }
-      catch (error) {
-        console.log(error.message)
+      if (formData.year && formData.indicatorName) {
+        try {
+          const data = await getAllCountries()
+          const filteredCountries = data.filter(
+            (c) =>
+              !scores.some(
+                (s) =>
+                  s.countryName === c.name &&
+                  s.indicatorName === formData.indicatorName &&
+                  s.year === formData.year
+              )
+          )
+          setCountries(filteredCountries)
+        }
+        catch (error) {
+          console.log(error.message)
+          setCountries([])
+        }
+      } else {
+        setCountries([])
       }
     }
     fetchAllCountries()
-  }, [formData.indicatorName])
+  }, [formData.indicatorName, formData.year, scores])
 
   const validateForm = () => {
     let newError = null;
