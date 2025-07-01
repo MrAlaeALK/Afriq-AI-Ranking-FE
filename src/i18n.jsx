@@ -43,7 +43,7 @@ i18n
           readyToExplore: 'Prêt à découvrir l\'ouverture des données en Afrique?',
           callToExplore: 'Explorez notre carte interactive et comparez les performances des pays africains en matière de données ouvertes et de développement.',
           exploreCard: 'Explorer la carte',
-          knowMore: 'En savoir plus',
+          knowMore: 'Envoyer un message',
 
           // Criteria
           criteria: 'Critères d\'évaluation',

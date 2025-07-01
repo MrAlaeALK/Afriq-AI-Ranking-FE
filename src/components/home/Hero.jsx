@@ -1,7 +1,15 @@
 import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 
 const Hero = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const handleRedirectRanking = () => {
+    navigate('/classement');
+  };
+  const handleRedirectCard = () => {
+    navigate('/carte');
+  };
 
   return (
     <section className="hero-pattern pt-24 pb-16 md:pt-32 md:pb-24 dark:bg-gray-900">
@@ -15,12 +23,20 @@ const Hero = () => {
               {t('heroDescription')}
             </p>
             <div className="flex flex-wrap gap-4">
-              <a href="/carte" className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-md">
-                {t('exploreMap')}
-              </a>
-              <a href="/classement" className="px-6 py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors shadow-md">
-                {t('viewRanking')}
-              </a>
+            <button
+              className="px-6 py-3 bg-purple-600 text-white font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-md"
+              onClick={handleRedirectCard}
+            >
+              {t('exploreMap')}
+            </button>
+
+            <button
+              className="px-6 py-3 bg-green-500 text-white font-medium rounded-lg hover:bg-green-600 transition-colors shadow-md"
+              onClick={handleRedirectRanking}
+            >
+              {t('viewRanking')}
+            </button>
+            
             </div>
           </div>
 
