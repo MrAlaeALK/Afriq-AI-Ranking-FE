@@ -219,12 +219,13 @@ const AddIndicatorDialogContent = memo(
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="weight">Poids Dimension</Label>
+                  <Label htmlFor="weight">Poids (%)</Label>
                   <Input
                     value={formData.weight}
                     onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                     type="number"
                     placeholder="25"
+                    className={formErrors.weight ? "border-red-500" : ""}
                   />
                 </div>
                 <div>
@@ -355,12 +356,13 @@ const EditIndicatorDialogContent = memo(
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Poids Dimension</Label>
+              <Label>Poids (%)</Label>
               <Input
                 value={formData.weight}
                 onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
                 type="number"
                 placeholder="25"
+                className={formErrors.weight ? "border-red-500" : ""}
               />
             </div>
             <div>
@@ -730,9 +732,22 @@ export default function IndicatorsPage() {
           return
         }
         
+        // Check if it's a weight validation error (400 status)
+        if (error.response?.status === 400 && error.response?.data?.message) {
+          const errorMessage = error.response.data.message
+          
+          // Check if it's a weight limit error
+          if (errorMessage.includes("poids total ne peut pas dépasser") || errorMessage.includes("Poids actuel de la dimension")) {
+            setFormErrors({ 
+              weight: errorMessage
+            })
+            return
+          }
+        }
+        
         // Display backend validation errors in the popup form
         setFormErrors({ 
-          general: error.message || "Une erreur inattendue s'est produite"
+          general: error.response?.data?.message || error.message || "Une erreur inattendue s'est produite"
         })
         return
       } finally {
@@ -828,9 +843,22 @@ export default function IndicatorsPage() {
           return
         }
         
+        // Check if it's a weight validation error (400 status)
+        if (error.response?.status === 400 && error.response?.data?.message) {
+          const errorMessage = error.response.data.message
+          
+          // Check if it's a weight limit error
+          if (errorMessage.includes("poids total ne peut pas dépasser") || errorMessage.includes("Poids actuel de la dimension")) {
+            setFormErrors({ 
+              weight: errorMessage
+            })
+            return
+          }
+        }
+        
         // Display backend validation errors in the popup form
         setFormErrors({ 
-          general: error.message || "Une erreur inattendue s'est produite"
+          general: error.response?.data?.message || error.message || "Une erreur inattendue s'est produite"
         })
         return
       } finally {
@@ -931,9 +959,23 @@ export default function IndicatorsPage() {
       
     } catch (error) {
       console.error("Error updating indicator:", error)
+      
+      // Check if it's a weight validation error (400 status)
+      if (error.response?.status === 400 && error.response?.data?.message) {
+        const errorMessage = error.response.data.message
+        
+        // Check if it's a weight limit error
+        if (errorMessage.includes("poids total ne peut pas dépasser") || errorMessage.includes("Poids actuel de la dimension")) {
+          setFormErrors({ 
+            weight: errorMessage
+          })
+          return
+        }
+      }
+      
       // Display backend validation errors in the popup form
       setFormErrors({ 
-        general: error.message || "Une erreur inattendue s'est produite"
+        general: error.response?.data?.message || error.message || "Une erreur inattendue s'est produite"
       })
     } finally {
       setSaving(false)
@@ -1318,7 +1360,7 @@ export default function IndicatorsPage() {
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      Poids Dimension
+                      Poids (%)
                     </div>
                   </TableHead>
                   <TableHead className="text-center">
