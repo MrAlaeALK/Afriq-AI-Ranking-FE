@@ -3,6 +3,7 @@ import { Badge } from "../../components/ui/badge"
 import { BarChart3, FileText, Target, Layers, Gauge, Trophy } from "lucide-react"
 
 export default function Dashboard() {
+
   const stats = [
     {
       title: "Total Pays",
@@ -84,6 +85,8 @@ export default function Dashboard() {
           <Badge variant="outline">Données 2024</Badge>
         </div>
       </div>
+
+
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {stats.map((stat) => (

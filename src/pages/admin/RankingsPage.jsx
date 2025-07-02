@@ -1,5 +1,3 @@
-"use client"
-
 import { useEffect, useMemo, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card"
 import { Button } from "../../components/ui/button"
@@ -8,21 +6,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Badge } from "../../components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "../../components/ui/chart"
-import { Trophy, TrendingUp, BarChart3, Play, Download, Eye, Trash2 } from "lucide-react"
-import { deleteRanking, generateRanking, getAllCountries, getAllRanks, getAllScores, getDimensionScoresByYear, getRankingYears, getScoresByYear, getYearRanking } from "../../services/adminService"
+import { Trophy, Play, Eye, Trash2, AlertTriangle, CheckCircle } from "lucide-react"
+import { deleteRanking, generateRanking, getAllRanks, getAllScores, getDimensionScoresByYear, getRankingYears, getYearRanking, validateYearWeights } from "../../services/adminService"
+import { Alert, AlertDescription, AlertTitle } from "../../components/ui/alert"
 import {
-  ResponsiveContainer,
   LineChart,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
-  Tooltip,
-  Legend,
 } from 'recharts';
 import { Progress } from "../../components/ui/progress"
 import { Label } from "../../components/ui/label"
-import useScoreManagement from "../../hooks/useScoreManagement"
 import { Checkbox } from "../../components/ui/checkbox"
 import { useConfirmDialog } from "../../hooks/useConfirmDialog"
 import ConfirmDialog from "../../components/admin/ConfirmDialog"
@@ -40,6 +35,9 @@ function RankingsPage() {
   const [generationYears, setGenerationYears] = useState([])  //years where there is at least one score and no ranking yet
   const [dimensionScores, setDimensionScores] = useState([])
   const [error, setError] = useState(null)
+  const [weightValidation, setWeightValidation] = useState(null)
+  const [isValidating, setIsValidating] = useState(false)
+  const [canGenerateRanking, setCanGenerateRanking] = useState(false)
   const fetchYears = async () => {
     try {
       const data = await getRankingYears()
@@ -106,6 +104,34 @@ function RankingsPage() {
     }
     fetchScoreYears()
   }, [years])
+
+  // Validate weights for selected generation year
+  const validateWeightsForYear = async (year) => {
+    if (!year) return
+    
+    setIsValidating(true)
+    setWeightValidation(null)
+    setCanGenerateRanking(false)
+    
+    try {
+      const result = await validateYearWeights(year)
+      setWeightValidation(result.validationResults)
+      setCanGenerateRanking(result.canGenerateRanking)
+    } catch (error) {
+      console.error("Weight validation failed:", error)
+      setCanGenerateRanking(false)
+      setError("Impossible de valider les poids. Veuillez vérifier la configuration.")
+    } finally {
+      setIsValidating(false)
+    }
+  }
+
+  // Validate weights when generation year changes
+  useEffect(() => {
+    if (selectedGenerationYear) {
+      validateWeightsForYear(selectedGenerationYear)
+    }
+  }, [selectedGenerationYear])
 
   useEffect(() => {
     const fetchAllRanks = async () => {
@@ -178,10 +204,17 @@ function RankingsPage() {
 
   const handleGenerateRanking = async () => {
     setError(null)
+    
+    if (!canGenerateRanking) {
+      setError("Impossible de générer le classement. Corrigez d'abord les erreurs de validation des poids.")
+      return
+    }
+    
     try {
       const data = await generateRanking(selectedGenerationYear)
       setYears((prev) => [...prev, selectedGenerationYear])
       setIsGenerateDialogOpen(false)
+      setWeightValidation(null)
     }
     catch (error) {
       setError(error.message)
@@ -243,13 +276,52 @@ function RankingsPage() {
             </Select>
           </div>
 
+          {/* Weight Validation Status */}
+          {selectedGenerationYear && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Validation des Poids</label>
+              
+              {isValidating ? (
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Validation en cours...</AlertTitle>
+                  <AlertDescription>
+                    Vérification des poids pour l'année {selectedGenerationYear}
+                  </AlertDescription>
+                </Alert>
+              ) : canGenerateRanking ? (
+                <Alert className="border-green-200 bg-green-50">
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <AlertTitle className="text-green-800">Validation réussie</AlertTitle>
+                  <AlertDescription className="text-green-700">
+                    Tous les poids sont valides. Le classement peut être généré.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <Alert variant="destructive">
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertTitle>Poids invalide</AlertTitle>
+                  <AlertDescription>
+                    Vérifier que les poids des dimensions et des indicateurs totalisent 100%
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => {
               setError(null)
+              setWeightValidation(null)
               setIsGenerateDialogOpen(false)}}>
               Annuler
             </Button>
-            <Button onClick={handleGenerateRanking}>Générer les classements</Button>
+            <Button 
+              onClick={handleGenerateRanking} 
+              disabled={!canGenerateRanking || isValidating}
+            >
+              {isValidating ? "Validation..." : "Générer les classements"}
+            </Button>
           </div>
         </div>
       </DialogContent>

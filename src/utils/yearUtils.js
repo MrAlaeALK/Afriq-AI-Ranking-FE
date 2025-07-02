@@ -31,4 +31,11 @@ export const isValidYear = (year) => {
   const currentYear = new Date().getFullYear();
   
   return yearNum >= 2020 && yearNum <= currentYear;
+};
+
+export const prepareWeightForAPI = (formData) => {
+  return {
+    ...formData,
+    weight: parseInt(formData.weight) // Send percentage as it is
+  };
 }; 

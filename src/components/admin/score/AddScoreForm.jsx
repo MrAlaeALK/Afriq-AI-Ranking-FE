@@ -8,9 +8,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Plus, Upload, FileSpreadsheet, Edit, Save, CheckCircle, XCircle, Trash2, X, Info } from "lucide-react"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../../components/ui/tooltip"
 
-const AddScoreForm = ({ scores, setScores }) => {
+const AddScoreForm = ({ scores, setScores, isOpen, setIsOpen }) => {
   const [formData, setFormData] = useState({ year: null, countryName: "", indicatorName: "", score: null });
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
+
+  // Use external control if provided, otherwise use internal state
+  const dialogOpen = isOpen !== undefined ? isOpen : isAddDialogOpen
+  const setDialogOpen = setIsOpen !== undefined ? setIsOpen : setIsAddDialogOpen
   const [years, setYears] = useState([])
   const [countries, setCountries] = useState([])
   const [indicators, setIndicators] = useState([])
@@ -107,7 +111,7 @@ const AddScoreForm = ({ scores, setScores }) => {
       const newScore = await addScore(formData)
       setScores((prev) => [...prev, newScore])
 
-      setIsAddDialogOpen(false)
+      setDialogOpen(false)
       setFormData({
         year: null,
         countryName: "",
@@ -121,7 +125,7 @@ const AddScoreForm = ({ scores, setScores }) => {
   }
 
   const closeAddDialog = () => {
-    setIsAddDialogOpen(false)
+    setDialogOpen(false)
     setFormData({
       year: null,
       countryName: "",
@@ -135,7 +139,7 @@ const AddScoreForm = ({ scores, setScores }) => {
 
   return (
     <>
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogTrigger asChild>
           <Button>
             <Plus className="h-4 w-4 mr-2" />

@@ -5,10 +5,10 @@ import { Label } from "../../../components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../../components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../../components/ui/dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../../components/ui/tabs"
-import { Plus, Upload, FileSpreadsheet, Edit, Save, CheckCircle, XCircle, Trash2, X } from "lucide-react"
+import { Plus, Upload, FileSpreadsheet, Edit, Save, CheckCircle, XCircle, Trash2, X, BarChart3 } from "lucide-react"
 import {deleteScore, editScore, getRankingYears} from "../../../services/adminService"
 const ScoreTable = ({ scores, setScores, years, countries, indicators, selectedCountry, selectedIndicator, selectedYear, setSelectedCountry, setSelectedIndicator, setSelectedYear, error, setError,
-    openConfirmDialog }) => {
+    openConfirmDialog, onAddFirstScore }) => {
   const [editingScore, setEditingScore] = useState(null)
   const [formData, setFormData] = useState({
     id: null,
@@ -202,6 +202,35 @@ const ScoreTable = ({ scores, setScores, years, countries, indicators, selectedC
             Affichage de {filteredScores.length} sur {scores.length} scores
           </p>
         </div>
+        
+        {scores.length === 0 ? (
+          // Empty state - no scores at all
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="rounded-full bg-muted p-3 mb-4">
+              <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Aucun score disponible</h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              Commencez par ajouter votre premier score pour un pays et un indicateur ou téléchargez un fichier de données.
+            </p>
+            <Button onClick={onAddFirstScore}>
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter le premier score
+            </Button>
+          </div>
+        ) : filteredScores.length === 0 ? (
+          // Empty state - no scores matching filters
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="rounded-full bg-muted p-3 mb-4">
+              <BarChart3 className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Aucun score pour les filtres sélectionnés</h3>
+            <p className="text-muted-foreground mb-6 max-w-md">
+              Modifiez vos filtres ci-dessus ou ajoutez des scores pour les critères sélectionnés.
+            </p>
+          </div>
+        ) : (
+          // Normal state - show scores table
         <div className="overflow-auto">
           <table className="w-full">
             <thead className="border-b">
@@ -254,6 +283,7 @@ const ScoreTable = ({ scores, setScores, years, countries, indicators, selectedC
             </tbody>
           </table>
         </div>
+        )}
       </div>
     </>
   )

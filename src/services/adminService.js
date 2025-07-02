@@ -1,5 +1,4 @@
 import { get, post, put, patch, del, delWithBody, upload } from "../utils/apiRequest";
-import { decimalToPercentage, calculateEffectiveWeight } from "../utils/weightUtils";
 
 export const getAllScores = () =>
   get("/admin/dashboard/scores", "Fetching scores failed");
@@ -67,20 +66,11 @@ export const updateIndicator = (id, formData) =>
 export const deleteIndicator = (id) =>
   del(`/admin/dashboard/indicators/${id}`, "Deleting indicator failed");
 
-export const toggleIndicatorStatus = (id) =>
-  patch(`/admin/dashboard/indicators/${id}/status`, {}, "Toggling indicator status failed");
-
 export const getIndicatorWeightByYear = (id, year) =>
   get(`/admin/dashboard/indicators/${id}/weight/${year}`, "Fetching indicator weight failed");
 
 export const getIndicatorsByDimension = (dimensionId) =>
   get(`/admin/dashboard/indicators/dimension/${dimensionId}`, "Fetching indicators by dimension failed");
-
-export const getActiveIndicators = () =>
-  get("/admin/dashboard/indicators/active", "Fetching active indicators failed");
-
-export const bulkUpdateIndicatorStatus = (indicatorIds, status) =>
-  patch(`/admin/dashboard/indicators/bulk/status?status=${status}`, indicatorIds, "Bulk status update failed");
 
 export const bulkDeleteIndicators = (indicatorIds) =>
   delWithBody("/admin/dashboard/indicators/bulk", indicatorIds, "Bulk delete failed");
@@ -105,7 +95,9 @@ export const getAllDimensions = () =>
 
 export const getIndicatorsForUI = async () => {
   try {
-    const indicators = await getAllIndicators(); // Already returns the data directly
+    const indicatorsResponse = await getAllIndicators();
+    // indicatorsResponse IS the data array (handleApiResponse already extracted it)
+    const indicators = indicatorsResponse || [];
     
     if (!Array.isArray(indicators)) {
       console.warn("Indicators is not an array:", indicators);
@@ -142,12 +134,11 @@ export const getIndicatorsForUI = async () => {
           description: indicator.description,
           dimension: indicator.dimension?.name || "Non assigné",
           dimensionId: indicator.dimension?.id || null,
-          weight: decimalToPercentage(weight), // Convert 0.0-1.0 to percentage (within dimension)
-          effectiveWeight: decimalToPercentage(effectiveWeight), // Convert 0.0-1.0 to percentage (global)
-          dimensionWeight: decimalToPercentage(dimensionWeight), // Convert 0.0-1.0 to percentage
+          weight: weight || 0, 
+          effectiveWeight: effectiveWeight || 0, 
+          dimensionWeight: dimensionWeight || 0, 
           normalization: mapBackendNormalizationType(indicator.normalizationType),
           year: year,
-          status: indicator.status,
         });
       });
     });
@@ -162,24 +153,31 @@ export const getIndicatorsForUI = async () => {
 // Get dimensions formatted for the new UI
 export const getDimensionsForUI = async () => {
   try {
-    const dimensions = await getAllDimensions(); // Already returns the data directly
+    const dimensionsResponse = await getAllDimensions();
+    
+    // dimensionsResponse IS the data array (handleApiResponse already extracted it)
+    const dimensions = dimensionsResponse || [];
+    console.log("📊 Retrieved", dimensions.length, "dimensions from database");
     
     if (!Array.isArray(dimensions)) {
-      console.warn("Dimensions is not an array:", dimensions);
+      console.warn("⚠️ Dimensions is not an array:", dimensions);
       return [];
     }
     
     // Only return dimensions that have a valid year
-    return dimensions
-      .filter(dimension => dimension.year != null) // Only keep dimensions with actual years
-      .map(dimension => ({
+    const filteredDimensions = dimensions.filter(dimension => dimension.year != null);
+    
+    const transformedDimensions = filteredDimensions.map(dimension => ({
       id: dimension.id,
-      name: dimension.name,
-        year: dimension.year, // Use actual year from database
+      name: dimension.name,  
+      year: dimension.year, // Use actual year from database
       description: dimension.description || "",
     }));
+    
+    console.log("✅ Returning", transformedDimensions.length, "valid dimensions");
+    return transformedDimensions;
   } catch (error) {
-    console.error("Error fetching dimensions for UI:", error);
+    console.error("❌ Error fetching dimensions for UI:", error);
     return []; // Return empty array instead of mock data
   }
 };
@@ -191,9 +189,106 @@ export const createDimension = (formData) =>
 export const updateDimension = (id, formData) =>
   put(`/dimension/update/${id}`, formData, "Updating dimension failed");
 
-export const deleteDimension = (id) =>
-  del(`/dimension/delete/${id}`, "Deleting dimension failed");
+export const deleteDimension = (id, force = false) =>
+  del(`/dimension/delete/${id}${force ? '?force=true' : ''}`, "Deleting dimension failed");
 
 // Get dimension weights for a specific year (if needed)
 export const getDimensionWeightsByYear = (year) =>
   post("/dimension/year_dimensions", { year }, "Getting dimension weights by year failed");
+
+/**
+ * Weight Validation API Functions
+ * ===============================
+ * These functions integrate with the hybrid weight validation system
+ */
+
+/**
+ * Validates weights for a specific dimension and year
+ * @param {number} dimensionId - The dimension ID to validate
+ * @param {number} year - The year to validate for
+ * @returns {Promise} Validation result from backend
+ */
+export const validateDimensionWeights = async (dimensionId, year) => {
+  return await post("/admin/dashboard/validate-dimension-weights", {
+    dimensionId,
+    year
+  });
+};
+
+/**
+ * Gets comprehensive weight validation report for administrative review
+ * @param {number|null} year - Optional year filter (null for all years)
+ * @returns {Promise} Array of dimension weight summaries
+ */
+export const getWeightValidationReport = async (year = null) => {
+  const params = year ? `?year=${year}` : '';
+  return await get(`/admin/dashboard/weight-validation-report${params}`);
+};
+
+/**
+ * Gets weight adjustment suggestions for auto-fix functionality
+ * @param {number} dimensionId - The dimension ID to get suggestions for
+ * @param {number} year - The year to get suggestions for
+ * @returns {Promise} Map of indicator ID to suggested weight
+ */
+export const suggestWeightAdjustment = async (dimensionId, year) => {
+  return await post("/admin/dashboard/suggest-weight-adjustment", {
+    dimensionId,
+    year
+  });
+};
+
+/**
+ * Validates dimension weights for a specific year (checks if they sum to 100%)
+ * @param {number} year - The year to validate
+ * @returns {Promise} Validation result for dimension weights
+ */
+export const validateDimensionWeightsForYear = async (year) => {
+  return await post("/admin/dashboard/validate-dimension-weights-for-year", { year });
+};
+
+/**
+ * Validates all dimension weights for a given year before ranking generation
+ * NOW INCLUDES both dimension weight validation AND indicator weight validation
+ * @param {number} year - The year to validate
+ * @returns {Promise} Object with validation results and ranking generation status
+ */
+export const validateYearWeights = async (year) => {
+  return await post("/admin/dashboard/validate-year-weights", { year });
+};
+
+/**
+ * Generates rankings with comprehensive weight validation
+ * @param {number} year - The year to generate rankings for
+ * @returns {Promise} Ranking generation result or validation errors
+ */
+export const generateRankingWithValidation = async (year) => {
+  return await post("/admin/dashboard/generate-ranking-with-validation", { year });
+};
+
+/**
+ * Updates multiple indicator weights with validation
+ * @param {Array} weightUpdates - Array of weight update objects
+ * @returns {Promise} Update results with validation status
+ */
+export const updateIndicatorWeightsBatch = async (weightUpdates, year, dimensionId = null) => {
+  return await post("/admin/dashboard/update-indicator-weights-batch", {
+    weightUpdates,
+    year,
+    dimensionId
+  });
+};
+
+/**
+ * Applies auto-adjustment suggestions to indicator weights
+ * @param {number} dimensionId - The dimension ID to adjust
+ * @param {number} year - The year to adjust for
+ * @param {string} adjustmentType - Type of adjustment: 'proportional' or 'equal'
+ * @returns {Promise} Applied weight adjustments
+ */
+export const applyWeightAdjustment = async (dimensionId, year, adjustmentType = 'proportional') => {
+  return post("/admin/dashboard/apply-weight-adjustment", 
+    { dimensionId, year, adjustmentType }, 
+    "Failed to apply weight adjustment"
+  );
+};

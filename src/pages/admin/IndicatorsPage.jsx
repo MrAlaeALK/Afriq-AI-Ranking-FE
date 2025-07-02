@@ -11,7 +11,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Badge } from "../../components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
-import { Plus, Edit, Trash2, Target, TrendingUp, Loader2, CheckCircle2, AlertCircle, X, Scale, HelpCircle, Info } from "lucide-react"
+import { Plus, Edit, Trash2, Target, TrendingUp, Loader2, CheckCircle2, AlertCircle, X, Info, AlertTriangle } from "lucide-react"
+import DeletionWarningDialog from "../../components/admin/DeletionWarningDialog"
 import { getIndicatorsForUI, getDimensionsForUI, createIndicator, updateIndicator, deleteIndicator, normalizeWeights, normalizeAllWeights, normalizeDimensionWeights, normalizeAllDimensionWeights } from "../../services/adminService"
 import { generateYears, getCurrentYear } from "../../utils/yearUtils"
 
@@ -218,7 +219,22 @@ const AddIndicatorDialogContent = memo(
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="weight">Poids (%)</Label>
+                  <div className="flex items-center gap-1 mb-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            Pourcentage de poids que cet indicateur représente dans sa dimension. 
+                            Tous les indicateurs d'une même dimension doivent totaliser 100%.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    <Label htmlFor="weight">Poids Dimension</Label>
+                  </div>
                   <Input
                     value={formData.weight}
                     onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
@@ -354,7 +370,22 @@ const EditIndicatorDialogContent = memo(
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label>Poids (%)</Label>
+              <div className="flex items-center gap-1 mb-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-xs">
+                        Pourcentage de poids que cet indicateur représente dans sa dimension. 
+                        Tous les indicateurs d'une même dimension doivent totaliser 100%.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <Label>Poids Dimension</Label>
+              </div>
               <Input
                 value={formData.weight}
                 onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
@@ -395,6 +426,8 @@ const EditIndicatorDialogContent = memo(
     )
   },
 )
+
+
 
 export default function IndicatorsPage() {
   // Initialize selectedYear from localStorage or default to "2024"
@@ -446,6 +479,7 @@ export default function IndicatorsPage() {
   const [formErrors, setFormErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState("")
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, indicator: null })
+  const [warningDialog, setWarningDialog] = useState({ open: false, data: null })
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -455,6 +489,9 @@ export default function IndicatorsPage() {
   })
   const [editingIndicator, setEditingIndicator] = useState(null)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+
+  // Add state for tracking weight validation across all dimensions
+  const [dimensionValidations, setDimensionValidations] = useState(new Map())
 
   // Save selectedYear to localStorage whenever it changes
   useEffect(() => {
@@ -599,7 +636,7 @@ export default function IndicatorsPage() {
         ? deleteConfirm.indicator.id.split('-')[0] 
         : deleteConfirm.indicator.id
       
-      await deleteIndicator(originalId)
+      const response = await deleteIndicator(originalId)
       
       // Refresh data from backend
       const [indicatorsData, dimensionsData] = await Promise.all([
@@ -609,7 +646,15 @@ export default function IndicatorsPage() {
       setIndicators(indicatorsData)
       setDimensions(dimensionsData)
       
+      // Check if response has warning data
+      if (response && response.warning) {
+        // Show warning dialog
+        setWarningDialog({ open: true, data: response })
+      } else {
+        // No warning, just show success message
       setSuccessMessage("Indicateur supprimé avec succès")
+      }
+      
       setDeleteConfirm({ open: false, indicator: null })
       
     } catch (error) {
@@ -643,7 +688,7 @@ export default function IndicatorsPage() {
           unit: "Unité",
           dimensionId: selectedDim.id,
           year: selectedDim.year,
-          weight: Number.parseFloat(formData.weight) / 100, // Convert percentage to decimal
+          weight: Math.round(Number.parseFloat(formData.weight)), // Keep as Integer percentage (0-100)
           normalizationType: mapNormalizationType(formData.normalization)
         }
 
@@ -719,7 +764,7 @@ export default function IndicatorsPage() {
           unit: "Unité",
           dimensionId: Number(targetDim.id), // Ensure it's a number
           year: parsedTargetYear,
-          weight: Math.round((parsedWeight / 100) * 1000) / 1000, // Convert percentage to decimal with 3 decimal precision
+          weight: Math.round(parsedWeight), // Keep as Integer percentage (0-100)
           normalizationType: mapNormalizationType(formData.normalization)
         }
 
@@ -775,7 +820,7 @@ export default function IndicatorsPage() {
         unit: "Unité",
         dimensionId: selectedDim.id,
         year: selectedDim.year,
-        weight: Number.parseFloat(formData.weight) / 100, // Convert percentage to decimal
+        weight: Math.round(Number.parseFloat(formData.weight)), // Keep as Integer percentage (0-100)
         normalizationType: mapNormalizationType(formData.normalization)
       }
 
@@ -828,7 +873,9 @@ export default function IndicatorsPage() {
 
   const closeEditDialog = useCallback(() => {
     setIsEditDialogOpen(false)
-  }, [])
+    setEditingIndicator(null)
+    clearMessages()
+  }, [clearMessages])
 
   // Normalization handlers
   const handleNormalizeWeights = useCallback(async () => {
@@ -917,6 +964,8 @@ export default function IndicatorsPage() {
       setSaving(false)
     }
   }, [])
+
+
 
   return (
     <div className="space-y-6">
@@ -1030,12 +1079,12 @@ export default function IndicatorsPage() {
           <CardContent>
             <div className="text-2xl font-bold">
               {filteredIndicators.length > 0
-                ? Math.round(filteredIndicators.filter(i => i.status === "ACTIVE").reduce((sum, ind) => sum + (ind.effectiveWeight || 0), 0))
+                ? Math.round(filteredIndicators.filter(i => i.effectiveWeight > 0).reduce((sum, ind) => sum + (ind.effectiveWeight || 0), 0))
                 : 0}
               %
             </div>
             <p className="text-xs text-muted-foreground">
-              Somme des poids effectifs ({filteredIndicators.filter(i => i.status === "ACTIVE").length} indicateurs actifs)
+              Somme des poids effectifs ({filteredIndicators.filter(i => i.effectiveWeight > 0).length} indicateurs actifs)
             </p>
           </CardContent>
         </Card>
@@ -1068,7 +1117,50 @@ export default function IndicatorsPage() {
         </Card>
       </div>
 
-      {/* Sélecteur d'année et tableau */}
+      {/* Weight Validation Warning */}
+      {(() => {
+        // Group indicators by dimension and calculate weight sums
+        const dimensionWeights = {}
+        filteredIndicators.forEach(indicator => {
+          const dimId = indicator.dimensionId
+          if (!dimensionWeights[dimId]) {
+            dimensionWeights[dimId] = {
+              name: indicator.dimension,
+              totalWeight: 0
+            }
+          }
+          dimensionWeights[dimId].totalWeight += indicator.weight
+        })
+
+        // Find dimensions with weight sum < 100%
+        const incompleteDimensions = Object.entries(dimensionWeights)
+          .filter(([dimId, data]) => data.totalWeight < 100)
+          .map(([dimId, data]) => ({ dimId, ...data }))
+
+        if (incompleteDimensions.length > 0) {
+          return (
+            <div className="space-y-2 mb-6">
+              {incompleteDimensions.map(dim => (
+                               <div key={dim.dimId} className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-400 p-4 rounded-r-lg shadow-sm">
+                   <div className="flex items-center">
+                     <div className="flex-shrink-0">
+                       <AlertCircle className="h-5 w-5 text-red-400" />
+                     </div>
+                     <div className="ml-3">
+                       <p className="text-sm font-medium text-red-800">
+                         Dimension "{dim.name}" incomplète : il manque {100 - dim.totalWeight}% de poids d'indicateurs ({dim.totalWeight}/100%)
+                       </p>
+                     </div>
+                   </div>
+                 </div>
+              ))}
+            </div>
+          )
+        }
+        return null
+      })()}
+
+      {/* Tableau des indicateurs */}
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
@@ -1091,87 +1183,14 @@ export default function IndicatorsPage() {
             </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nom</TableHead>
-                <TableHead>Dimension</TableHead>
-                <TableHead className="text-center">
-                  <TooltipProvider>
-                    <Tooltip delayDuration={300}>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center justify-center gap-2 cursor-help">
-                          <Info className="h-4 w-4 text-muted-foreground hover:text-blue-600 transition-colors" />
-                          <span>Poids dans Dimension</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <div className="space-y-1">
-                          <p className="font-medium">Part de l'indicateur</p>
-                          <p className="text-sm text-muted-foreground">Pourcentage que représente cet indicateur dans sa dimension (automatiquement normalisé)</p>
-                          <div className="text-xs text-blue-600 font-medium">Si seul dans sa dimension = 100%</div>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableHead>
-                <TableHead className="text-center">
-                  <TooltipProvider>
-                    <Tooltip delayDuration={300}>
-                      <TooltipTrigger asChild>
-                        <div className="flex items-center justify-center gap-2 cursor-help">
-                          <Info className="h-4 w-4 text-muted-foreground hover:text-green-600 transition-colors" />
-                          <span>Poids Effectif</span>
-                        </div>
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <div className="space-y-1">
-                          <p className="font-medium">Impact final dans le classement</p>
-                          <p className="text-sm text-muted-foreground">Poids réel de l'indicateur dans le classement global</p>
-                          <p className="text-xs text-blue-600 font-mono">Poids dans Dimension × Poids Dimension</p>
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </TableHead>
-                <TableHead>Normalisation</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
               {loading ? (
-                // Loading skeleton rows
-                Array.from({ length: 3 }).map((_, index) => (
-                  <TableRow key={index}>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-                        <div className="h-3 bg-gray-200 rounded animate-pulse w-1/2"></div>
+            <div className="space-y-4">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="h-16 bg-gray-200 rounded animate-pulse"></div>
+              ))}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-6 bg-gray-200 rounded animate-pulse w-20"></div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-6 bg-gray-200 rounded animate-pulse w-16"></div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="h-6 bg-gray-200 rounded animate-pulse w-24"></div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex gap-2">
-                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-8 w-8 bg-gray-200 rounded animate-pulse"></div>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))
               ) : filteredIndicators.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center py-12">
+            <div className="text-center py-12">
                     <div className="flex flex-col items-center space-y-4">
                       <Target className="h-12 w-12 text-gray-400" />
                       <div className="space-y-2">
@@ -1187,15 +1206,68 @@ export default function IndicatorsPage() {
                         Créer le premier indicateur
                       </Button>
                     </div>
-                  </TableCell>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Indicateur</TableHead>
+                  <TableHead>Dimension</TableHead>
+                  <TableHead className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Pourcentage de poids que cet indicateur représente dans sa dimension. 
+                              Tous les indicateurs d'une même dimension doivent totaliser 100%.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      Poids Dimension
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p className="max-w-xs">
+                              Poids final de l'indicateur dans le calcul global du classement. 
+                              Calculé en multipliant le poids de l'indicateur par le poids de sa dimension.
+                            </p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      Poids Effectif
+                    </div>
+                  </TableHead>
+                  <TableHead>Normalisation</TableHead>
+                  <TableHead className="text-center">Actions</TableHead>
                 </TableRow>
-              ) : (
-                filteredIndicators.map((indicator) => (
+              </TableHeader>
+                            <TableBody>
+                {filteredIndicators.map((indicator) => {
+                  // Calculate dimension weight sum to determine badge color
+                  const dimensionIndicators = filteredIndicators.filter(i => i.dimensionId === indicator.dimensionId)
+                  const dimensionWeightSum = dimensionIndicators.reduce((sum, i) => sum + i.weight, 0)
+                  const hasWeightProblem = dimensionWeightSum < 100
+                  
+                  return (
                   <TableRow key={indicator.id}>
                     <TableCell>
                     <div>
                       <div className="font-medium">{indicator.name}</div>
-                      <div className="text-sm text-muted-foreground max-w-xs truncate">{indicator.description}</div>
+                          <div className="text-sm text-muted-foreground max-w-xs truncate">
+                            {indicator.description}
+                          </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -1205,18 +1277,24 @@ export default function IndicatorsPage() {
                     <Badge variant="secondary">{indicator.weight}%</Badge>
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
+                        <Badge 
+                          variant="default" 
+                          className={hasWeightProblem 
+                            ? "bg-red-100 text-red-800 hover:bg-red-100 hover:text-red-800" 
+                            : "bg-green-100 text-green-800 hover:bg-green-100 hover:text-green-800"
+                          }
+                        >
                       {indicator.effectiveWeight || 0}%
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant="outline">
+                        <Badge variant="outline" className="text-xs">
                       {normalizationTypes.find((t) => t.value === indicator.normalization)?.label ||
                         indicator.normalization}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                    <div className="flex gap-2">
+                        <div className="flex gap-1 justify-center">
                         <Button variant="outline" size="sm" onClick={() => handleEdit(indicator)}>
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -1231,10 +1309,11 @@ export default function IndicatorsPage() {
                       </div>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+                  )
+                })}
             </TableBody>
           </Table>
+          )}
         </CardContent>
       </Card>
 
@@ -1287,6 +1366,13 @@ export default function IndicatorsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Deletion Warning Dialog */}
+      <DeletionWarningDialog
+        open={warningDialog.open}
+        onClose={() => setWarningDialog({ open: false, data: null })}
+        warningData={warningDialog.data}
+      />
     </div>
   )
 }

@@ -9,7 +9,8 @@ import { Textarea } from "../../components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select"
 import { Badge } from "../../components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog"
-import { Plus, Edit, Trash2, Layers, Target, ChevronDown, ChevronRight, Loader2, AlertCircle, CheckCircle, Scale } from "lucide-react"
+import { Plus, Edit, Trash2, Layers, Target, ChevronDown, ChevronRight, Loader2, AlertCircle, CheckCircle, Scale, Calendar, X, AlertTriangle } from "lucide-react"
+import DeletionWarningDialog from "../../components/admin/DeletionWarningDialog"
 
 import { 
   getDimensionsForUI, 
@@ -17,9 +18,11 @@ import {
   updateDimension, 
   deleteDimension,
   getDimensionWeightsByYear,
-  getIndicatorsForUI 
+  getIndicatorsForUI,
+  updateIndicatorWeightsBatch
 } from "../../services/adminService"
-import { validatePercentageWeight, prepareWeightForAPI, calculateWeightValidation, decimalToPercentage } from "../../utils/weightUtils"
+import apiClient from "../../utils/apiClient"
+import { validatePercentageWeight, calculateWeightValidation, decimalToPercentage, validateDimensionWeightCompleteness } from "../../utils/weightUtils"
 import { generateYears, getCurrentYear } from "../../utils/yearUtils"
 
 // Composants de contenu de dialogue mémorisés
@@ -453,13 +456,22 @@ export default function DimensionsPage() {
   const [indicators, setIndicators] = useState([])
   const [formErrors, setFormErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState("")
+  const [bannerError, setBannerError] = useState("")
   const [weightValidation, setWeightValidation] = useState({ isValid: true, message: "", total: 0 })
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, dimension: null })
+  const [deleteConfirm, setDeleteConfirm] = useState({ 
+    open: false, 
+    dimension: null, 
+    showCascadeConfirm: false, 
+    cascadeData: null 
+  })
+  const [adjustingWeights, setAdjustingWeights] = useState(false)
+  const [warningDialog, setWarningDialog] = useState({ open: false, data: null })
 
   // Define clearMessages early so it can be used in other callbacks
   const clearMessages = useCallback(() => {
     setFormErrors({})
     setSuccessMessage("")
+    setBannerError("")
     setError(null)
   }, [])
 
@@ -518,7 +530,13 @@ export default function DimensionsPage() {
         const yearWeights = dimensionWeightsByYear[dim.year] || [];
         const weightData = yearWeights.find(w => w.dimensionId === dim.id || w.id === dim.id);
         if (weightData) {
-          dimensionWeight = decimalToPercentage(weightData.weight || 0); // Convert to percentage
+          // Handle both decimal (0.0-1.0) and percentage (0-100) formats
+          const rawWeight = weightData.weight || weightData.dimensionWeight || 0;
+          dimensionWeight = rawWeight <= 1 ? decimalToPercentage(rawWeight) : rawWeight;
+        } else {
+          // If no weight data found, use a default weight
+          console.warn(`No weight found for dimension ${dim.name} (ID: ${dim.id}) for year ${dim.year}, using default weight 0`);
+          dimensionWeight = 0;
         }
         
         dimensionMap.set(key, {
@@ -566,6 +584,7 @@ export default function DimensionsPage() {
       for (const year of uniqueYears) {
         try {
           const yearDimensions = await getDimensionWeightsByYear(year);
+          console.log(`📊 Fetched ${yearDimensions.length} weights for year ${year}:`, yearDimensions);
           dimensionWeightsByYear[year] = yearDimensions;
         } catch (error) {
           console.warn(`Failed to fetch dimension weights for year ${year}:`, error);
@@ -574,6 +593,7 @@ export default function DimensionsPage() {
       }
       
       const transformedDimensions = transformDimensionData(dimensionsData, indicatorsData, dimensionWeightsByYear)
+      console.log(`📊 Loaded ${transformedDimensions.length} dimensions total, ${transformedDimensions.filter(d => d.year.toString() === selectedYear).length} for year ${selectedYear}`)
       setDimensions(transformedDimensions)
       setIndicators(indicatorsData)
     } catch (error) {
@@ -645,11 +665,38 @@ export default function DimensionsPage() {
     const remainingWeight = 100 - totalWeight
     const totalIndicators = filteredDimensions.reduce((sum, dim) => sum + dim.indicators.length, 0)
     
+    // Calculate validation statistics and collect invalid dimension details
+    let validDimensions = 0
+    let invalidDimensions = 0
+    const invalidDimensionDetails = []
+    
+    filteredDimensions.forEach(dimension => {
+      const indicatorWeights = dimension.indicators.map(indicator => ({ 
+        weight: parseFloat(indicator.weight) || 0 
+      }));
+      const validation = validateDimensionWeightCompleteness(indicatorWeights);
+      if (validation.isValid) {
+        validDimensions++;
+      } else {
+        invalidDimensions++;
+        invalidDimensionDetails.push({
+          name: dimension.name,
+          currentSum: validation.currentSum,
+          difference: validation.difference,
+          indicatorCount: dimension.indicators.length
+        });
+      }
+    });
+    
     return {
       count: filteredDimensions.length,
       totalWeight,
       remainingWeight,
-      totalIndicators
+      totalIndicators,
+      validDimensions,
+      invalidDimensions,
+      invalidDimensionDetails,
+      validationRate: filteredDimensions.length > 0 ? Math.round((validDimensions / filteredDimensions.length) * 100) : 100
     }
   }, [filteredDimensions])
 
@@ -686,24 +733,56 @@ export default function DimensionsPage() {
   }, [clearMessages, getWeightValidationStatus])
 
   const handleDelete = useCallback((dimension) => {
-    setDeleteConfirm({ open: true, dimension })
+    setDeleteConfirm({ 
+      open: true, 
+      dimension,
+      showCascadeConfirm: false,
+      cascadeData: null
+    })
   }, [])
 
-  const confirmDelete = useCallback(async () => {
+  const confirmDelete = useCallback(async (forceDelete = false) => {
     if (!deleteConfirm.dimension) return
     
       setSaving(true)
       try {
-      await deleteDimension(deleteConfirm.dimension.id)
+      // Use apiClient directly to handle 409 case
+      const response = await apiClient.delete(`/dimension/delete/${deleteConfirm.dimension.id}${forceDelete ? '?force=true' : ''}`)
+      
+      // Success case - handle response data
+      const data = response.data.data
+      
         // Refresh data after deletion
         await fetchData()
-      setSuccessMessage("Dimension supprimée avec succès")
-      setDeleteConfirm({ open: false, dimension: null })
+      
+      // Check if response has cascadeDeleted data (successful cascade deletion)
+      if (data && data.cascadeDeleted) {
+        setSuccessMessage(`Dimension supprimée avec succès. ${data.cascadeDeleted.count} classements associés ont également été supprimés.`)
+      } else {
+        setSuccessMessage(data?.message || "Dimension supprimée avec succès")
+      }
+      
+      setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })
       } catch (error) {
         console.error("Erreur lors de la suppression de la dimension:", error)
-        // Show specific error message from backend if available
+      
+      // Check if it's a 409 confirmation required error
+      if (error.response?.status === 409) {
+        const errorData = error.response.data
+        if (errorData.requiresConfirmation) {
+          setDeleteConfirm(prev => ({ 
+            ...prev, 
+            showCascadeConfirm: true, 
+            cascadeData: errorData 
+          }))
+          return
+        }
+      }
+      
+      // Show specific error message for other errors
         const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la suppression de la dimension"
         setError(errorMessage)
+      setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })
       } finally {
         setSaving(false)
       }
@@ -729,26 +808,42 @@ export default function DimensionsPage() {
 
       setSaving(true)
       try {
-        // Data sanitization using weight utility
-        const basePayload = {
+        // Data sanitization - send weight as integer percentage directly
+        const payload = {
           name: formData.name.trim().substring(0, 30), // Ensure max 30 chars
           description: formData.description.trim().substring(0, 250), // Ensure max 250 chars
-          weight: formData.weight, // Will be converted to decimal by prepareWeightForAPI
-          year: Number.parseInt(formData.year)
+          weight: parseInt(formData.weight), // Send as integer percentage (0-100)
+          year: parseInt(formData.year)
         }
-        
-        const payload = prepareWeightForAPI(basePayload)
 
-        await createDimension(payload)
+        console.log("Creating dimension:", payload.name, "for year", payload.year)
+        const result = await createDimension(payload)
+        console.log("✅ Dimension created successfully:", result.name)
+        
+        // Small delay to ensure database transaction is committed
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         // Refresh data after creation
         await fetchData()
-        setSuccessMessage("Dimension créée avec succès")
+        console.log("✅ Data refreshed successfully")
+        
+        // Check if rankings were invalidated due to new dimension addition
+        let message = `Dimension "${payload.name}" créée avec succès pour l'année ${payload.year}`
+        if (result.rankingsInvalidated) {
+          message += `. ⚠️ ATTENTION: Les classements existants pour ${payload.year} ont été supprimés car ils ne reflétaient pas cette nouvelle dimension. Veuillez régénérer les classements.`
+        }
+        
+        setSuccessMessage(message)
         setIsAddDialogOpen(false)
         resetForm()
       } catch (error) {
         console.error("Erreur lors de la création de la dimension:", error)
         const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la création de la dimension"
-        setError(errorMessage)
+        
+        // Display backend validation errors in the popup form
+        setFormErrors({ 
+          general: errorMessage
+        })
       } finally {
         setSaving(false)
       }
@@ -784,26 +879,42 @@ export default function DimensionsPage() {
           throw new Error("Dimension source introuvable")
         }
         
-        // Data sanitization and validation using weight utility
-        const basePayload = {
+        // Data sanitization - send weight as integer percentage directly
+        const payload = {
           name: sourceDim.name.trim().substring(0, 30),
           description: sourceDim.description.trim().substring(0, 250),
-          weight: formData.weight, // Will be converted to decimal by prepareWeightForAPI
-          year: Number.parseInt(selectedYear)
+          weight: parseInt(formData.weight), // Send as integer percentage (0-100)
+          year: parseInt(selectedYear)
         }
         
-        const payload = prepareWeightForAPI(basePayload)
+        console.log("Copying dimension:", payload.name, "for year", payload.year)
+        const result = await createDimension(payload)
+        console.log("✅ Dimension copied successfully:", result.name)
         
-        await createDimension(payload)
+        // Small delay to ensure database transaction is committed
+        await new Promise(resolve => setTimeout(resolve, 500))
+        
         // Refresh data after creation
         await fetchData()
-        setSuccessMessage("Dimension copiée avec succès")
+        console.log("✅ Data refreshed successfully")
+        
+        // Check if rankings were invalidated due to new dimension addition
+        let message = `Dimension "${payload.name}" copiée avec succès pour l'année ${payload.year}`
+        if (result.rankingsInvalidated) {
+          message += `. ⚠️ ATTENTION: Les classements existants pour ${payload.year} ont été supprimés car ils ne reflétaient pas cette nouvelle dimension. Veuillez régénérer les classements.`
+        }
+        
+        setSuccessMessage(message)
         setIsAddDialogOpen(false)
         resetForm()
       } catch (error) {
         console.error("Erreur lors de la copie de la dimension:", error)
         const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la copie de la dimension"
-        setError(errorMessage)
+        
+        // Display backend validation errors in the popup form
+        setFormErrors({ 
+          general: errorMessage
+        })
       } finally {
         setSaving(false)
       }
@@ -829,15 +940,13 @@ export default function DimensionsPage() {
 
     setSaving(true)
     try {
-      // Data sanitization using weight utility
-      const basePayload = {
+      // Data sanitization - send weight as integer percentage directly
+      const payload = {
         name: formData.name.trim().substring(0, 30), // Ensure max 30 chars
         description: formData.description.trim().substring(0, 250), // Ensure max 250 chars
-        weight: formData.weight, // Will be converted to decimal by prepareWeightForAPI
-        year: Number.parseInt(formData.year)
+        weight: parseInt(formData.weight), // Send as integer percentage (0-100)
+        year: parseInt(formData.year)
       }
-      
-      const payload = prepareWeightForAPI(basePayload)
 
       await updateDimension(editingDimension.id, payload)
       // Refresh data after update
@@ -849,7 +958,11 @@ export default function DimensionsPage() {
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la dimension:", error)
       const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la mise à jour de la dimension"
-      setError(errorMessage)
+      
+      // Display backend validation errors in the popup form
+      setFormErrors({ 
+        general: errorMessage
+      })
     } finally {
       setSaving(false)
     }
@@ -890,6 +1003,8 @@ export default function DimensionsPage() {
     clearMessages()
   }, [clearMessages])
 
+
+
   // Save selectedYear to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem("dimensionsPage_selectedYear", selectedYear)
@@ -902,7 +1017,7 @@ export default function DimensionsPage() {
 
   useEffect(() => {
     fetchData()
-  }, [fetchData])
+  }, []) // Remove fetchData from dependencies to prevent infinite loop
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -911,7 +1026,7 @@ export default function DimensionsPage() {
       if (event.key === 'Escape') {
         if (isAddDialogOpen) setIsAddDialogOpen(false)
         if (isEditDialogOpen) setIsEditDialogOpen(false)
-        if (deleteConfirm.open) setDeleteConfirm({ open: false, dimension: null })
+        if (deleteConfirm.open) setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })
         }
       }
       
@@ -929,6 +1044,16 @@ export default function DimensionsPage() {
     }
   }, [successMessage])
 
+  // Auto-clear banner error messages after 8 seconds
+  useEffect(() => {
+    if (bannerError) {
+      const timer = setTimeout(() => {
+        setBannerError("")
+      }, 8000)
+      return () => clearTimeout(timer)
+    }
+  }, [bannerError])
+
   // Update weight validation when dimensions or form data changes
   useEffect(() => {
     if (formData.weight) {
@@ -943,7 +1068,97 @@ export default function DimensionsPage() {
       const validation = getWeightValidationStatus(formData.weight, excludeId, targetYear)
       setWeightValidation(validation)
     }
-  }, [dimensions, formData.weight, formData.year, editingDimension, getWeightValidationStatus])
+  }, [dimensions, formData.weight, formData.year, editingDimension]) // Remove getWeightValidationStatus from dependencies
+
+  // Auto-adjustment handlers
+  const handleProportionalAdjustment = useCallback(async () => {
+    if (adjustingWeights) return
+    
+    setAdjustingWeights(true)
+    try {
+      // Get all dimensions with invalid indicator weights for the selected year
+      const dimensionsWithInvalidWeights = filteredDimensions.filter(dimension => {
+        const indicatorWeights = dimension.indicators.map(indicator => ({ 
+          weight: parseFloat(indicator.weight) || 0,
+          id: indicator.id,
+          originalId: indicator.id,
+          indicatorId: indicator.id
+        }));
+        const validation = validateDimensionWeightCompleteness(indicatorWeights);
+        return !validation.isValid && dimension.indicators.length > 0;
+      });
+
+      // Process each dimension with invalid weights
+      for (const dimension of dimensionsWithInvalidWeights) {
+        const updates = dimension.indicators.map(indicator => {
+          // Calculate proportional weights (equal distribution)
+          const equalWeight = Math.round((100 / dimension.indicators.length) * 100) / 100;
+          return {
+            indicatorId: indicator.id,
+            weight: equalWeight,
+            year: parseInt(selectedYear),
+            dimensionId: dimension.id
+          };
+        });
+
+        // Adjust the last indicator to ensure total is exactly 100%
+        if (updates.length > 0) {
+          const totalExceptLast = updates.slice(0, -1).reduce((sum, update) => sum + update.weight, 0);
+          updates[updates.length - 1].weight = Math.round((100 - totalExceptLast) * 100) / 100;
+        }
+
+        await updateIndicatorWeightsBatch(updates, parseInt(selectedYear), dimension.id);
+      }
+
+      setSuccessMessage("Poids ajustés automatiquement avec succès");
+      await fetchData(); // Refresh data
+    } catch (error) {
+      console.error("Erreur lors de l'ajustement automatique:", error);
+      setBannerError(error.response?.data?.message || "Erreur lors de l'ajustement automatique");
+    } finally {
+      setAdjustingWeights(false);
+    }
+  }, [adjustingWeights, filteredDimensions, selectedYear, fetchData]);
+
+  const handleEqualDistribution = useCallback(async () => {
+    if (adjustingWeights) return
+    
+    setAdjustingWeights(true)
+    try {
+      // Get all dimensions with indicators for the selected year
+      const dimensionsWithIndicators = filteredDimensions.filter(dimension => dimension.indicators.length > 0);
+
+      // Process each dimension
+      for (const dimension of dimensionsWithIndicators) {
+        const updates = dimension.indicators.map(indicator => {
+          // Equal distribution
+          const equalWeight = Math.round((100 / dimension.indicators.length) * 100) / 100;
+          return {
+            indicatorId: indicator.id,
+            weight: equalWeight,
+            year: parseInt(selectedYear),
+            dimensionId: dimension.id
+          };
+        });
+
+        // Adjust the last indicator to ensure total is exactly 100%
+        if (updates.length > 0) {
+          const totalExceptLast = updates.slice(0, -1).reduce((sum, update) => sum + update.weight, 0);
+          updates[updates.length - 1].weight = Math.round((100 - totalExceptLast) * 100) / 100;
+        }
+
+        await updateIndicatorWeightsBatch(updates, parseInt(selectedYear), dimension.id);
+      }
+
+      setSuccessMessage("Distribution égale appliquée avec succès");
+      await fetchData(); // Refresh data
+    } catch (error) {
+      console.error("Erreur lors de la distribution égale:", error);
+      setBannerError(error.response?.data?.message || "Erreur lors de la distribution égale");
+    } finally {
+      setAdjustingWeights(false);
+    }
+  }, [adjustingWeights, filteredDimensions, selectedYear, fetchData]);
 
   if (loading) {
     return (
@@ -1028,7 +1243,7 @@ export default function DimensionsPage() {
       </div>
 
       {/* Cartes de statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total des dimensions</CardTitle>
@@ -1065,17 +1280,107 @@ export default function DimensionsPage() {
             <p className="text-xs text-muted-foreground">À travers toutes les dimensions</p>
           </CardContent>
         </Card>
+
+
       </div>
+
+
+
+      {/* Dimension Weight Total Validation */}
+      {dimensionStatistics.totalWeight !== 100 && dimensionStatistics.count > 0 && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm mb-4">
+          <div className="flex items-center">
+            <div className="flex-shrink-0">
+              <AlertTriangle className="h-5 w-5 text-yellow-400" />
+            </div>
+            <div className="ml-3">
+              <p className="text-sm font-medium text-yellow-800">
+                {dimensionStatistics.totalWeight < 100 
+                  ? (
+                    <>
+                      <span className="font-bold">Attention</span> : Les dimensions totalisent {dimensionStatistics.totalWeight}% au lieu de 100% - Ajoutez {dimensionStatistics.remainingWeight}% en créant de nouvelles dimensions ou en modifiant les poids existants
+                    </>
+                  )
+                  : (
+                    <>
+                      <span className="font-bold">Attention</span> : Les dimensions totalisent {dimensionStatistics.totalWeight}% au lieu de 100% - Réduisez les poids de {dimensionStatistics.totalWeight - 100}%
+                    </>
+                  )
+                }
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced Weight Validation Panel */}
+      {dimensionStatistics.invalidDimensions > 0 && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-400 p-4 rounded-r-lg">
+          <div className="flex items-start justify-between">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                <AlertCircle className="h-5 w-5 text-red-500 mt-0.5" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-semibold text-red-800 mb-1">
+                  Validation des Poids
+                </h3>
+                <div className="text-sm text-red-700">
+                  <div className="space-y-2">
+                    {dimensionStatistics.invalidDimensionDetails.map((dimension, index) => (
+                      <div key={index}>
+                        <span>
+                          Dimension "{dimension.name}" : {dimension.difference < 0 
+                            ? `il manque ${Math.abs(dimension.difference).toFixed(0)}% de poids (${dimension.currentSum}/100%)`
+                            : `excès de ${dimension.difference.toFixed(0)}% de poids (${dimension.currentSum}/100%)`
+                          }
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex gap-2 ml-4">
+              <Button
+                size="sm"
+                onClick={handleProportionalAdjustment}
+                disabled={adjustingWeights}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {adjustingWeights && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
+                Ajustement Auto
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Success message */}
       {successMessage && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 p-4 rounded-r-lg shadow-sm">
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 p-4 rounded-r-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
           <div className="flex items-start">
             <div className="flex-shrink-0">
-              <CheckCircle className="h-5 w-5 text-green-400 mt-0.5" />
+              <CheckCircle className="h-6 w-6 text-green-500 mt-0.5" />
             </div>
             <div className="ml-3">
-              <p className="text-sm font-medium text-green-800">{successMessage}</p>
+              <p className="text-base font-semibold text-green-800">{successMessage}</p>
+              <p className="text-sm text-green-600 mt-1">La page va se rafraîchir automatiquement</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Banner Error message */}
+      {bannerError && (
+        <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-400 p-4 rounded-r-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <AlertCircle className="h-6 w-6 text-red-500 mt-0.5" />
+            </div>
+            <div className="ml-3">
+              <p className="text-base font-semibold text-red-800">{bannerError}</p>
+              <p className="text-sm text-red-600 mt-1">Veuillez corriger l'erreur et réessayer</p>
             </div>
           </div>
         </div>
@@ -1149,7 +1454,17 @@ export default function DimensionsPage() {
               </div>
             ) : (
               // Normal state - show dimensions
-              filteredDimensions.map((dimension) => (
+              filteredDimensions.map((dimension) => {
+                // Calculate validation for this dimension's indicators
+                const indicatorWeights = dimension.indicators.map(indicator => ({ 
+                  weight: parseFloat(indicator.weight) || 0,
+                  id: indicator.id,
+                  originalId: indicator.id,
+                  indicatorId: indicator.id
+                }));
+                const validation = validateDimensionWeightCompleteness(indicatorWeights);
+                
+                                 return (
               <div key={dimension.id} className="border rounded-lg">
                 <div className="p-4">
                   <div className="flex items-center justify-between">
@@ -1158,14 +1473,32 @@ export default function DimensionsPage() {
                         <div className="font-medium">{dimension.name}</div>
                         <div className="text-sm text-muted-foreground max-w-xs truncate">{dimension.description}</div>
                       </div>
-                      <Badge variant="outline">{dimension.weight}%</Badge>
+                          <Badge 
+                            variant="outline"
+                            className={
+                              validation.isValid 
+                                ? "bg-white text-gray-700 border-gray-300"
+                                : "bg-white text-red-700 border-red-300"
+                            }
+                          >
+                            {dimension.weight}%
+                          </Badge>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => toggleDimensionExpansion(dimension.id)}
                         className="flex items-center gap-2"
                       >
-                        <Badge variant="secondary">{dimension.indicators.length} indicateurs</Badge>
+                            <Badge 
+                              variant="secondary" 
+                              className={
+                                validation.isValid 
+                                  ? "bg-white text-gray-700 border-gray-300"
+                                  : "bg-red-100 text-red-700 border-red-200"
+                              }
+                            >
+                              {dimension.indicators.length} indicateurs
+                            </Badge>
                         {expandedDimensions[dimension.id] ? (
                           <ChevronDown className="h-4 w-4" />
                         ) : (
@@ -1190,17 +1523,31 @@ export default function DimensionsPage() {
                   </div>
                 </div>
 
+
+
                 {expandedDimensions[dimension.id] && (
                   <div className="border-t bg-muted/50 p-4">
                     <h4 className="font-medium mb-3">Indicateurs liés</h4>
+                          
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                       {dimension.indicators.map((indicator) => (
                         <div
                           key={indicator.id}
-                          className="flex items-center justify-between p-2 bg-background rounded border"
+                                className={`flex items-center justify-between p-2 rounded border ${
+                                  validation.isValid 
+                                    ? "bg-background" 
+                                    : "bg-red-50/30 border-red-200"
+                                }`}
                         >
                           <span className="text-sm">{indicator.name}</span>
-                          <Badge variant="outline" className="text-xs">
+                                <Badge 
+                                  variant="outline" 
+                                  className={`text-xs ${
+                                    validation.isValid 
+                                      ? "bg-white text-gray-700 border-gray-300"
+                                      : "bg-red-50 text-red-700 border-red-300"
+                                  }`}
+                                >
                             {indicator.weight}%
                           </Badge>
                         </div>
@@ -1209,14 +1556,15 @@ export default function DimensionsPage() {
                   </div>
                 )}
               </div>
-              ))
+                );
+              })
             )}
           </div>
         </CardContent>
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirm.open} onOpenChange={(open) => setDeleteConfirm({ open, dimension: null })}>
+      <Dialog open={deleteConfirm.open && !deleteConfirm.showCascadeConfirm} onOpenChange={(open) => setDeleteConfirm({ open, dimension: null, showCascadeConfirm: false, cascadeData: null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center text-red-600">
@@ -1232,14 +1580,14 @@ export default function DimensionsPage() {
           <div className="flex justify-end gap-2 mt-4">
             <Button 
               variant="outline" 
-              onClick={() => setDeleteConfirm({ open: false, dimension: null })}
+              onClick={() => setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })}
               disabled={saving}
             >
               Annuler
             </Button>
             <Button 
               variant="destructive" 
-              onClick={confirmDelete}
+              onClick={() => confirmDelete(false)}
               disabled={saving}
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -1248,6 +1596,62 @@ export default function DimensionsPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Cascade Deletion Confirmation Dialog */}
+      <Dialog open={deleteConfirm.showCascadeConfirm} onOpenChange={(open) => !open && setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-red-600">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              Suppression avec impact sur les classements
+            </DialogTitle>
+            <DialogDescription className="space-y-3">
+              <p>{deleteConfirm.cascadeData?.message}</p>
+              
+              {deleteConfirm.cascadeData?.affectedYears && (
+                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                  <p className="font-medium text-red-800 mb-2">Années de classement affectées:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {deleteConfirm.cascadeData.affectedYears.map(year => (
+                      <Badge key={year} variant="destructive" className="text-xs">
+                        {year}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              <p className="text-sm text-red-600 font-medium">
+                {deleteConfirm.cascadeData?.warning}
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })}
+              disabled={saving}
+            >
+              Annuler
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={() => confirmDelete(true)}
+              disabled={saving}
+            >
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {saving ? "Suppression..." : "Supprimer quand même"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Deletion Warning Dialog */}
+      <DeletionWarningDialog
+        open={warningDialog.open}
+        onClose={() => setWarningDialog({ open: false, data: null })}
+        warningData={warningDialog.data}
+      />
     </div>
   )
 }
