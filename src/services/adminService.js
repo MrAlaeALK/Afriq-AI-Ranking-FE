@@ -60,6 +60,9 @@ export const getIndicatorById = (id) =>
 export const createIndicator = (formData) =>
   post("/admin/dashboard/indicators", formData, "Creating indicator failed");
 
+export const forceCreateIndicator = (formData) =>
+  post("/admin/dashboard/indicators/force-create", formData, "Force creating indicator failed");
+
 export const updateIndicator = (id, formData) =>
   put(`/admin/dashboard/indicators/${id}`, formData, "Updating indicator failed");
 
@@ -186,11 +189,17 @@ export const getDimensionsForUI = async () => {
 export const createDimension = (formData) =>
   post("/dimension/create", formData, "Creating dimension failed");
 
+export const forceCreateDimension = (formData) =>
+  post("/dimension/force-create", formData, "Force creating dimension failed");
+
 export const updateDimension = (id, formData) =>
   put(`/dimension/update/${id}`, formData, "Updating dimension failed");
 
 export const deleteDimension = (id, force = false) =>
   del(`/dimension/delete/${id}${force ? '?force=true' : ''}`, "Deleting dimension failed");
+
+export const forceDeleteDimension = (id) =>
+  del(`/dimension/force-delete/${id}`, "Force deleting dimension failed");
 
 // Get dimension weights for a specific year (if needed)
 export const getDimensionWeightsByYear = (year) =>
@@ -292,3 +301,7 @@ export const applyWeightAdjustment = async (dimensionId, year, adjustmentType = 
     "Failed to apply weight adjustment"
   );
 };
+
+// Indicator deletion endpoints
+export const forceDeleteIndicator = (id) =>
+  del(`/admin/dashboard/indicators/force/${id}`, "Force deleting indicator failed");

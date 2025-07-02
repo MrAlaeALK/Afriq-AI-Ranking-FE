@@ -15,11 +15,12 @@ import DeletionWarningDialog from "../../components/admin/DeletionWarningDialog"
 import { 
   getDimensionsForUI, 
   createDimension, 
+  forceCreateDimension,
   updateDimension, 
   deleteDimension,
+  forceDeleteDimension,
   getDimensionWeightsByYear,
-  getIndicatorsForUI,
-  updateIndicatorWeightsBatch
+  getIndicatorsForUI
 } from "../../services/adminService"
 import apiClient from "../../utils/apiClient"
 import { validatePercentageWeight, calculateWeightValidation, decimalToPercentage, validateDimensionWeightCompleteness } from "../../utils/weightUtils"
@@ -461,8 +462,13 @@ export default function DimensionsPage() {
   const [deleteConfirm, setDeleteConfirm] = useState({ 
     open: false, 
     dimension: null, 
-    showCascadeConfirm: false, 
-    cascadeData: null 
+    rankingWarning: null 
+  })
+  const [createWarning, setCreateWarning] = useState({ 
+    open: false, 
+    message: null, 
+    payload: null,
+    mode: null 
   })
   const [adjustingWeights, setAdjustingWeights] = useState(false)
   const [warningDialog, setWarningDialog] = useState({ open: false, data: null })
@@ -736,56 +742,65 @@ export default function DimensionsPage() {
     setDeleteConfirm({ 
       open: true, 
       dimension,
-      showCascadeConfirm: false,
-      cascadeData: null
+      rankingWarning: null
     })
   }, [])
 
   const confirmDelete = useCallback(async (forceDelete = false) => {
     if (!deleteConfirm.dimension) return
     
-      setSaving(true)
-      try {
-      // Use apiClient directly to handle 409 case
-      const response = await apiClient.delete(`/dimension/delete/${deleteConfirm.dimension.id}${forceDelete ? '?force=true' : ''}`)
-      
-      // Success case - handle response data
-      const data = response.data.data
-      
-        // Refresh data after deletion
-        await fetchData()
-      
-      // Check if response has cascadeDeleted data (successful cascade deletion)
-      if (data && data.cascadeDeleted) {
-        setSuccessMessage(`Dimension supprimée avec succès. ${data.cascadeDeleted.count} classements associés ont également été supprimés.`)
+    setSaving(true)
+    try {
+      let response;
+      if (forceDelete) {
+        // Use force delete endpoint
+        response = await forceDeleteDimension(deleteConfirm.dimension.id)
       } else {
-        setSuccessMessage(data?.message || "Dimension supprimée avec succès")
+        // Use regular delete with validation
+        response = await deleteDimension(deleteConfirm.dimension.id)
       }
       
-      setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })
-      } catch (error) {
-        console.error("Erreur lors de la suppression de la dimension:", error)
+      // Refresh data after deletion
+      await fetchData()
       
-      // Check if it's a 409 confirmation required error
-      if (error.response?.status === 409) {
-        const errorData = error.response.data
-        if (errorData.requiresConfirmation) {
-          setDeleteConfirm(prev => ({ 
-            ...prev, 
-            showCascadeConfirm: true, 
-            cascadeData: errorData 
-          }))
-          return
-        }
+      if (forceDelete) {
+        setSuccessMessage(`Dimension "${deleteConfirm.dimension.name}" supprimée avec succès. Pensez à régénérer les classements pour les années affectées.`)
+      } else {
+        setSuccessMessage(`Dimension "${deleteConfirm.dimension.name}" supprimée avec succès`)
       }
       
-      // Show specific error message for other errors
-        const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la suppression de la dimension"
-        setError(errorMessage)
-      setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })
-      } finally {
-        setSaving(false)
+      setDeleteConfirm({ open: false, dimension: null, rankingWarning: null })
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la dimension:", error)
+      
+      // Check if it's a ranking validation warning
+      if (error.response?.status === 409 && error.response?.data?.message && !forceDelete) {
+        const warningMessage = error.response.data.message
+        
+        // Extract affected years from the warning message  
+        const yearMatches = warningMessage.match(/classements\s+([\d\s,]+)/)
+        const affectedYears = yearMatches 
+          ? yearMatches[1].split(',').map(y => y.trim()).filter(y => y)
+          : []
+        
+        // Update the existing dialog to show the warning inline
+        setDeleteConfirm(prev => ({ 
+          ...prev, 
+          rankingWarning: {
+            message: warningMessage,
+            affectedYears: affectedYears
+          }
+        }))
+        return
       }
+      
+      // Handle other errors
+      const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la suppression de la dimension"
+      setError(errorMessage)
+      setDeleteConfirm({ open: false, dimension: null, rankingWarning: null })
+    } finally {
+      setSaving(false)
+    }
   }, [deleteConfirm.dimension, fetchData])
 
   const handleAddDimension = useCallback(async () => {
@@ -838,6 +853,26 @@ export default function DimensionsPage() {
         resetForm()
       } catch (error) {
         console.error("Erreur lors de la création de la dimension:", error)
+        
+        // Check if it's a ranking validation warning
+        if (error.response?.status === 409 && error.response?.data?.message && error.response.data.message.includes("invalidera les classements")) {
+          const warningMessage = error.response.data.message
+          
+          // Show warning dialog for creation
+          setCreateWarning({
+            open: true,
+            message: warningMessage,
+            payload: {
+              name: formData.name.trim().substring(0, 30),
+              description: formData.description.trim().substring(0, 250),
+              weight: parseInt(formData.weight),
+              year: parseInt(formData.year)
+            },
+            mode: "new"
+          })
+          return
+        }
+        
         const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la création de la dimension"
         
         // Display backend validation errors in the popup form
@@ -909,6 +944,27 @@ export default function DimensionsPage() {
         resetForm()
       } catch (error) {
         console.error("Erreur lors de la copie de la dimension:", error)
+        
+        // Check if it's a ranking validation warning
+        if (error.response?.status === 409 && error.response?.data?.message && error.response.data.message.includes("invalidera les classements")) {
+          const warningMessage = error.response.data.message
+          const sourceDim = dimensions.find((d) => d.id.toString() === selectedDimension)
+          
+          // Show warning dialog for creation
+          setCreateWarning({
+            open: true,
+            message: warningMessage,
+            payload: {
+              name: sourceDim.name.trim().substring(0, 30),
+              description: sourceDim.description.trim().substring(0, 250),
+              weight: parseInt(formData.weight),
+              year: parseInt(selectedYear)
+            },
+            mode: "copy"
+          })
+          return
+        }
+        
         const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la copie de la dimension"
         
         // Display backend validation errors in the popup form
@@ -920,6 +976,36 @@ export default function DimensionsPage() {
       }
     }
   }, [addMode, formData, selectedDimension, selectedYear, dimensions, clearMessages, validateFormData, fetchData, resetForm])
+
+  const handleForceCreateDimension = useCallback(async () => {
+    if (!createWarning.payload) return
+    
+    setSaving(true)
+    try {
+      console.log("Force creating dimension:", createWarning.payload.name, "for year", createWarning.payload.year)
+      const result = await forceCreateDimension(createWarning.payload)
+      console.log("✅ Dimension force created successfully:", result.name)
+      
+      // Small delay to ensure database transaction is committed
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Refresh data after creation
+      await fetchData()
+      console.log("✅ Data refreshed successfully")
+      
+      const actionWord = createWarning.mode === "copy" ? "copiée" : "créée"
+      setSuccessMessage(`Dimension "${createWarning.payload.name}" ${actionWord} avec succès pour l'année ${createWarning.payload.year}. Pensez à régénérer les classements pour cette année.`)
+      setIsAddDialogOpen(false)
+      setCreateWarning({ open: false, message: null, payload: null, mode: null })
+      resetForm()
+    } catch (error) {
+      console.error("Erreur lors de la création forcée de la dimension:", error)
+      const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la création forcée de la dimension"
+      setFormErrors({ general: errorMessage })
+    } finally {
+      setSaving(false)
+    }
+  }, [createWarning.payload, createWarning.mode, fetchData, resetForm])
 
   const handleUpdateDimension = useCallback(async () => {
     clearMessages()
@@ -1026,7 +1112,7 @@ export default function DimensionsPage() {
       if (event.key === 'Escape') {
         if (isAddDialogOpen) setIsAddDialogOpen(false)
         if (isEditDialogOpen) setIsEditDialogOpen(false)
-        if (deleteConfirm.open) setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })
+        if (deleteConfirm.open) setDeleteConfirm({ open: false, dimension: null, rankingWarning: null })
         }
       }
       
@@ -1088,29 +1174,18 @@ export default function DimensionsPage() {
         return !validation.isValid && dimension.indicators.length > 0;
       });
 
-      // Process each dimension with invalid weights
+      // Process each dimension with equal weight distribution using the new endpoint
       for (const dimension of dimensionsWithInvalidWeights) {
-        const updates = dimension.indicators.map(indicator => {
-          // Calculate proportional weights (equal distribution)
-          const equalWeight = Math.round((100 / dimension.indicators.length) * 100) / 100;
-          return {
-            indicatorId: indicator.id,
-            weight: equalWeight,
-            year: parseInt(selectedYear),
-            dimensionId: dimension.id
-          };
+        if (dimension.indicators.length === 0) continue;
+
+        // Use the new clear-and-set-equal-weights endpoint
+        await apiClient.post('/admin/dashboard/clear-and-set-equal-weights', {
+          dimensionId: dimension.id,
+          year: parseInt(selectedYear)
         });
-
-        // Adjust the last indicator to ensure total is exactly 100%
-        if (updates.length > 0) {
-          const totalExceptLast = updates.slice(0, -1).reduce((sum, update) => sum + update.weight, 0);
-          updates[updates.length - 1].weight = Math.round((100 - totalExceptLast) * 100) / 100;
-        }
-
-        await updateIndicatorWeightsBatch(updates, parseInt(selectedYear), dimension.id);
       }
 
-      setSuccessMessage("Poids ajustés automatiquement avec succès");
+      setSuccessMessage("Poids distribués également avec succès");
       await fetchData(); // Refresh data
     } catch (error) {
       console.error("Erreur lors de l'ajustement automatique:", error);
@@ -1128,26 +1203,15 @@ export default function DimensionsPage() {
       // Get all dimensions with indicators for the selected year
       const dimensionsWithIndicators = filteredDimensions.filter(dimension => dimension.indicators.length > 0);
 
-      // Process each dimension
+      // Process each dimension with equal weight distribution
       for (const dimension of dimensionsWithIndicators) {
-        const updates = dimension.indicators.map(indicator => {
-          // Equal distribution
-          const equalWeight = Math.round((100 / dimension.indicators.length) * 100) / 100;
-          return {
-            indicatorId: indicator.id,
-            weight: equalWeight,
-            year: parseInt(selectedYear),
-            dimensionId: dimension.id
-          };
+        if (dimension.indicators.length === 0) continue;
+
+        // Use the new clear-and-set-equal-weights endpoint
+        await apiClient.post('/admin/dashboard/clear-and-set-equal-weights', {
+          dimensionId: dimension.id,
+          year: parseInt(selectedYear)
         });
-
-        // Adjust the last indicator to ensure total is exactly 100%
-        if (updates.length > 0) {
-          const totalExceptLast = updates.slice(0, -1).reduce((sum, update) => sum + update.weight, 0);
-          updates[updates.length - 1].weight = Math.round((100 - totalExceptLast) * 100) / 100;
-        }
-
-        await updateIndicatorWeightsBatch(updates, parseInt(selectedYear), dimension.id);
       }
 
       setSuccessMessage("Distribution égale appliquée avec succès");
@@ -1189,6 +1253,21 @@ export default function DimensionsPage() {
 
   return (
     <div className="space-y-6">
+      {/* Success message */}
+      {successMessage && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 p-4 rounded-r-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <CheckCircle className="h-6 w-6 text-green-500 mt-0.5" />
+            </div>
+            <div className="ml-3">
+              <p className="text-base font-semibold text-green-800">{successMessage}</p>
+              <p className="text-sm text-green-600 mt-1">La page va se rafraîchir automatiquement</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Gestion des dimensions</h2>
@@ -1284,8 +1363,6 @@ export default function DimensionsPage() {
 
       </div>
 
-
-
       {/* Dimension Weight Total Validation */}
       {dimensionStatistics.totalWeight !== 100 && dimensionStatistics.count > 0 && (
         <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-4 rounded-r-lg shadow-sm mb-4">
@@ -1331,8 +1408,8 @@ export default function DimensionsPage() {
                       <div key={index}>
                         <span>
                           Dimension "{dimension.name}" : {dimension.difference < 0 
-                            ? `il manque ${Math.abs(dimension.difference).toFixed(0)}% de poids (${dimension.currentSum}/100%)`
-                            : `excès de ${dimension.difference.toFixed(0)}% de poids (${dimension.currentSum}/100%)`
+                            ? `il manque ${Math.abs(dimension.difference).toFixed(0)}% de poids des indicateurs (${dimension.currentSum}/100%)`
+                            : `excès de ${dimension.difference.toFixed(0)}% de poids des indicateurs (${dimension.currentSum}/100%)`
                           }
                         </span>
                       </div>
@@ -1351,21 +1428,6 @@ export default function DimensionsPage() {
                 {adjustingWeights && <Loader2 className="h-3 w-3 mr-1 animate-spin" />}
                 Ajustement Auto
               </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Success message */}
-      {successMessage && (
-        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border-l-4 border-green-400 p-4 rounded-r-lg shadow-lg animate-in slide-in-from-top-2 duration-300">
-          <div className="flex items-start">
-            <div className="flex-shrink-0">
-              <CheckCircle className="h-6 w-6 text-green-500 mt-0.5" />
-            </div>
-            <div className="ml-3">
-              <p className="text-base font-semibold text-green-800">{successMessage}</p>
-              <p className="text-sm text-green-600 mt-1">La page va se rafraîchir automatiquement</p>
             </div>
           </div>
         </div>
@@ -1564,94 +1626,116 @@ export default function DimensionsPage() {
       </Card>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirm.open && !deleteConfirm.showCascadeConfirm} onOpenChange={(open) => setDeleteConfirm({ open, dimension: null, showCascadeConfirm: false, cascadeData: null })}>
+      <Dialog open={deleteConfirm.open} onOpenChange={(open) => setDeleteConfirm({ open, dimension: null, rankingWarning: null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center text-red-600">
               <AlertCircle className="h-5 w-5 mr-2" />
               Confirmer la suppression
             </DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer la dimension{" "}
-              <strong>"{deleteConfirm.dimension?.name}"</strong> ?{" "}
-              Cette action est irréversible et supprimera également tous les indicateurs associés.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2 mt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })}
-              disabled={saving}
-            >
-              Annuler
-            </Button>
-            <Button 
-              variant="destructive" 
-              onClick={() => confirmDelete(false)}
-              disabled={saving}
-            >
-              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {saving ? "Suppression..." : "Supprimer"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Cascade Deletion Confirmation Dialog */}
-      <Dialog open={deleteConfirm.showCascadeConfirm} onOpenChange={(open) => !open && setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-red-600">
-              <AlertCircle className="h-5 w-5 mr-2" />
-              Suppression avec impact sur les classements
-            </DialogTitle>
             <DialogDescription className="space-y-3">
-              <p>{deleteConfirm.cascadeData?.message}</p>
+              <div>
+                Êtes-vous sûr de vouloir supprimer la dimension{" "}
+                <strong>"{deleteConfirm.dimension?.name}"</strong> ?{" "}
+                Cette action est irréversible et supprimera également tous les indicateurs associés.
+              </div>
               
-              {deleteConfirm.cascadeData?.affectedYears && (
-                <div className="bg-red-50 p-3 rounded-lg border border-red-200">
-                  <p className="font-medium text-red-800 mb-2">Années de classement affectées:</p>
-                  <div className="flex flex-wrap gap-1">
-                    {deleteConfirm.cascadeData.affectedYears.map(year => (
-                      <Badge key={year} variant="destructive" className="text-xs">
-                        {year}
-                      </Badge>
-                    ))}
+              {deleteConfirm.rankingWarning && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-r-lg p-4 mt-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-amber-800 mb-2">
+                        {deleteConfirm.rankingWarning.message.replace(/🔄 Impact:\s*/, '')}
+                      </div>
+                      <div className="text-sm text-amber-700">
+                        Les classements devront être recalculés après suppression
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
-              
-              <p className="text-sm text-red-600 font-medium">
-                {deleteConfirm.cascadeData?.warning}
-              </p>
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 mt-4">
             <Button 
               variant="outline" 
-              onClick={() => setDeleteConfirm({ open: false, dimension: null, showCascadeConfirm: false, cascadeData: null })}
+              onClick={() => setDeleteConfirm({ open: false, dimension: null, rankingWarning: null })}
               disabled={saving}
             >
               Annuler
             </Button>
             <Button 
               variant="destructive" 
-              onClick={() => confirmDelete(true)}
+              onClick={() => confirmDelete(deleteConfirm.rankingWarning ? true : false)}
               disabled={saving}
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {saving ? "Suppression..." : "Supprimer quand même"}
+              {saving ? "Suppression en cours..." : deleteConfirm.rankingWarning ? "Supprimer quand même" : "Supprimer"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Deletion Warning Dialog */}
-      <DeletionWarningDialog
-        open={warningDialog.open}
-        onClose={() => setWarningDialog({ open: false, data: null })}
-        warningData={warningDialog.data}
-      />
+      {/* Create Warning Dialog */}
+      <Dialog open={createWarning.open} onOpenChange={(open) => setCreateWarning({ open, message: null, payload: null, mode: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-amber-600">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              Confirmer la création
+            </DialogTitle>
+            <DialogDescription className="space-y-3">
+              <div>
+                Êtes-vous sûr de vouloir créer la dimension{" "}
+                <strong>"{createWarning.payload?.name}"</strong> pour l'année {createWarning.payload?.year} ?
+              </div>
+              
+              {createWarning.message && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-r-lg p-4 mt-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-amber-800 mb-2">
+                        {createWarning.message}
+                      </div>
+                      <div className="text-sm text-amber-700">
+                        Les classements devront être recalculés après création
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setCreateWarning({ open: false, message: null, payload: null, mode: null })}
+              disabled={saving}
+            >
+              Annuler
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleForceCreateDimension}
+              disabled={saving}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {saving ? "Création en cours..." : "Créer quand même"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
+
+
     </div>
   )
 }

@@ -6,5 +6,12 @@ export const handleApiResponse = (response) => {
 }
 
 export const handleApiError = (error, fallbackMessage) => {
-  throw new Error(error.response?.data?.message || fallbackMessage);
+  // Preserve the original error structure so components can access response status and data
+  if (error.response) {
+    // Server responded with an error status
+    throw error;
+  } else {
+    // Network error or other issue - create a new error with fallback message
+    throw new Error(fallbackMessage || error.message);
+  }
 }

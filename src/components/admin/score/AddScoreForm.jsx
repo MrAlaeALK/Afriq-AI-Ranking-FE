@@ -25,8 +25,14 @@ const AddScoreForm = ({ scores, setScores, isOpen, setIsOpen }) => {
       if (formData.year) {
         try {
           const data = await getYearIndicators(formData.year)
-          setIndicators(data)
-          if (data.length === 0) {
+          
+          // Remove duplicates by indicator name on the frontend as a safety measure
+          const uniqueIndicators = data.filter((indicator, index, array) => 
+            array.findIndex(item => item.name === indicator.name) === index
+          );
+          
+          setIndicators(uniqueIndicators)
+          if (uniqueIndicators.length === 0) {
             setError(`Aucun indicateur trouvé pour l'année ${formData.year}. Veuillez d'abord créer des indicateurs pour cette année.`)
           }
         }

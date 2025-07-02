@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../../components/ui/tooltip"
 import { Plus, Edit, Trash2, Target, TrendingUp, Loader2, CheckCircle2, AlertCircle, X, Info, AlertTriangle } from "lucide-react"
 import DeletionWarningDialog from "../../components/admin/DeletionWarningDialog"
-import { getIndicatorsForUI, getDimensionsForUI, createIndicator, updateIndicator, deleteIndicator, normalizeWeights, normalizeAllWeights, normalizeDimensionWeights, normalizeAllDimensionWeights } from "../../services/adminService"
+import { getIndicatorsForUI, getDimensionsForUI, createIndicator, forceCreateIndicator, updateIndicator, deleteIndicator, forceDeleteIndicator, normalizeWeights, normalizeAllWeights, normalizeDimensionWeights, normalizeAllDimensionWeights } from "../../services/adminService"
 import { generateYears, getCurrentYear } from "../../utils/yearUtils"
 
 const AddIndicatorDialogContent = memo(
@@ -219,22 +219,7 @@ const AddIndicatorDialogContent = memo(
             <>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <div className="flex items-center gap-1 mb-2">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p className="max-w-xs">
-                            Pourcentage de poids que cet indicateur représente dans sa dimension. 
-                            Tous les indicateurs d'une même dimension doivent totaliser 100%.
-                          </p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <Label htmlFor="weight">Poids Dimension</Label>
-                  </div>
+                  <Label htmlFor="weight">Poids Dimension</Label>
                   <Input
                     value={formData.weight}
                     onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
@@ -370,22 +355,7 @@ const EditIndicatorDialogContent = memo(
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="flex items-center gap-1 mb-2">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="max-w-xs">
-                        Pourcentage de poids que cet indicateur représente dans sa dimension. 
-                        Tous les indicateurs d'une même dimension doivent totaliser 100%.
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <Label>Poids Dimension</Label>
-              </div>
+              <Label>Poids Dimension</Label>
               <Input
                 value={formData.weight}
                 onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
@@ -478,8 +448,18 @@ export default function IndicatorsPage() {
   const [error, setError] = useState(null)
   const [formErrors, setFormErrors] = useState({})
   const [successMessage, setSuccessMessage] = useState("")
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, indicator: null })
-  const [warningDialog, setWarningDialog] = useState({ open: false, data: null })
+  const [deleteConfirm, setDeleteConfirm] = useState({ 
+    open: false, 
+    indicator: null, 
+    rankingWarning: null 
+  })
+  const [createWarning, setCreateWarning] = useState({ 
+    open: false, 
+    message: null, 
+    payload: null,
+    mode: null 
+  })
+
   const [formData, setFormData] = useState({
     name: "",
     description: "",
@@ -551,7 +531,7 @@ export default function IndicatorsPage() {
       if (event.key === 'Escape') {
         if (isAddDialogOpen) setIsAddDialogOpen(false)
         if (isEditDialogOpen) setIsEditDialogOpen(false)
-        if (deleteConfirm.open) setDeleteConfirm({ open: false, indicator: null })
+        if (deleteConfirm.open) setDeleteConfirm({ open: false, indicator: null, rankingWarning: null })
       }
     }
 
@@ -626,7 +606,7 @@ export default function IndicatorsPage() {
     setDeleteConfirm({ open: true, indicator })
   }, [])
 
-  const confirmDelete = useCallback(async () => {
+  const confirmDelete = useCallback(async (forceDelete = false) => {
     if (!deleteConfirm.indicator) return
     
     setSaving(true)
@@ -636,7 +616,12 @@ export default function IndicatorsPage() {
         ? deleteConfirm.indicator.id.split('-')[0] 
         : deleteConfirm.indicator.id
       
-      const response = await deleteIndicator(originalId)
+      let response;
+      if (forceDelete) {
+        response = await forceDeleteIndicator(originalId)
+      } else {
+        response = await deleteIndicator(originalId)
+      }
       
       // Refresh data from backend
       const [indicatorsData, dimensionsData] = await Promise.all([
@@ -646,20 +631,42 @@ export default function IndicatorsPage() {
       setIndicators(indicatorsData)
       setDimensions(dimensionsData)
       
-      // Check if response has warning data
-      if (response && response.warning) {
-        // Show warning dialog
-        setWarningDialog({ open: true, data: response })
+      if (forceDelete) {
+        setSuccessMessage(`Indicateur "${deleteConfirm.indicator.name}" supprimé avec succès. Pensez à régénérer les classements pour les années affectées.`)
       } else {
-        // No warning, just show success message
-      setSuccessMessage("Indicateur supprimé avec succès")
+        setSuccessMessage(`Indicateur "${deleteConfirm.indicator.name}" supprimé avec succès`)
       }
       
-      setDeleteConfirm({ open: false, indicator: null })
+      setDeleteConfirm({ open: false, indicator: null, rankingWarning: null })
       
     } catch (error) {
       console.error("Error deleting indicator:", error)
-      setError(`Erreur lors de la suppression: ${error.message || "Une erreur inattendue s'est produite"}`)
+      
+      // Check if it's a ranking validation warning
+      if (error.response?.status === 409 && error.response?.data?.message && !forceDelete) {
+        const warningMessage = error.response.data.message
+        
+                // Extract affected years from the warning message  
+        const yearMatches = warningMessage.match(/classements\s+([\d\s,]+)/)
+        const affectedYears = yearMatches 
+          ? yearMatches[1].split(',').map(y => y.trim()).filter(y => y)
+          : []
+        
+        // Update the existing dialog to show the warning inline
+        setDeleteConfirm(prev => ({ 
+          ...prev, 
+          rankingWarning: {
+            message: warningMessage,
+            affectedYears: affectedYears
+          }
+        }))
+        return
+      }
+      
+      // Handle other errors
+      const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la suppression de l'indicateur"
+      setError(errorMessage)
+      setDeleteConfirm({ open: false, indicator: null, rankingWarning: null })
     } finally {
       setSaving(false)
     }
@@ -677,23 +684,21 @@ export default function IndicatorsPage() {
       }
 
       setSaving(true)
-      try {
-        const selectedDim = dimensions.find((d) => d.id.toString() === formData.dimension)
-        
-        // Create payload for backend API
+      
+      // Prepare payload outside try block so it's accessible in catch block
+      const selectedDim = dimensions.find((d) => d.id.toString() === formData.dimension)
       const payload = {
-          name: formData.name.trim().substring(0, 30), // Ensure max 30 chars
-          description: formData.description.trim().substring(0, 250), // Ensure max 250 chars
-          dataType: "Numérique",
-          unit: "Unité",
-          dimensionId: selectedDim.id,
-          year: selectedDim.year,
-          weight: Math.round(Number.parseFloat(formData.weight)), // Keep as Integer percentage (0-100)
-          normalizationType: mapNormalizationType(formData.normalization)
-        }
-
-        
-
+        name: formData.name.trim().substring(0, 30), // Ensure max 30 chars
+        description: formData.description.trim().substring(0, 250), // Ensure max 250 chars
+        dataType: "Numérique",
+        unit: "Unité",
+        dimensionId: selectedDim.id,
+        year: selectedDim.year,
+        weight: Math.round(Number.parseFloat(formData.weight)), // Keep as Integer percentage (0-100)
+        normalizationType: mapNormalizationType(formData.normalization)
+      }
+      
+      try {
         await createIndicator(payload)
         
         // Refresh data from backend
@@ -710,6 +715,21 @@ export default function IndicatorsPage() {
         
       } catch (error) {
         console.error("Error creating indicator:", error)
+        
+        // Check if it's a ranking validation warning
+        if (error.response?.status === 409 && error.response?.data?.message && error.response.data.message.includes("invalidera les classements")) {
+          const warningMessage = error.response.data.message
+          
+          // Show warning dialog for creation
+          setCreateWarning({
+            open: true,
+            message: warningMessage,
+            payload: payload,
+            mode: "new"
+          })
+          return
+        }
+        
         // Display backend validation errors in the popup form
         setFormErrors({ 
           general: error.message || "Une erreur inattendue s'est produite"
@@ -732,42 +752,51 @@ export default function IndicatorsPage() {
       }
 
       setSaving(true)
+      
+      // Validate that we have the required data
+      const sourceIndicator = indicators.find((i) => i.id.toString() === selectedIndicator)
+      if (!sourceIndicator) {
+        setFormErrors({ general: "Indicateur source introuvable" })
+        setSaving(false)
+        return
+      }
+
+      const targetDim = dimensions.find((d) => d.id.toString() === formData.dimension)
+      if (!targetDim) {
+        setFormErrors({ general: "Dimension cible introuvable" })
+        setSaving(false)
+        return
+      }
+
+      // Validate selectedYear (target year)
+      const parsedTargetYear = Number.parseInt(selectedYear)
+      if (isNaN(parsedTargetYear)) {
+        setFormErrors({ general: "Année cible invalide" })
+        setSaving(false)
+        return
+      }
+
+      // Validate weight
+      const parsedWeight = Number.parseFloat(formData.weight)
+      if (isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 100) {
+        setFormErrors({ general: "Poids invalide (doit être entre 0 et 100)" })
+        setSaving(false)
+        return
+      }
+
+      // Create payload for backend API (copy as new indicator) - outside try block
+      const payload = {
+        name: sourceIndicator.name.trim().substring(0, 30), // Use original name without modification
+        description: sourceIndicator.description.trim().substring(0, 250), // Ensure max 250 chars
+        dataType: "Numérique",
+        unit: "Unité",
+        dimensionId: Number(targetDim.id), // Ensure it's a number
+        year: parsedTargetYear,
+        weight: Math.round(parsedWeight), // Keep as Integer percentage (0-100)
+        normalizationType: mapNormalizationType(formData.normalization)
+      }
+      
       try {
-        // Validate that we have the required data
-        const sourceIndicator = indicators.find((i) => i.id.toString() === selectedIndicator)
-        if (!sourceIndicator) {
-          throw new Error("Indicateur source introuvable")
-        }
-
-        const targetDim = dimensions.find((d) => d.id.toString() === formData.dimension)
-        if (!targetDim) {
-          throw new Error("Dimension cible introuvable")
-        }
-
-        // Validate selectedYear (target year)
-        const parsedTargetYear = Number.parseInt(selectedYear)
-        if (isNaN(parsedTargetYear)) {
-          throw new Error("Année cible invalide")
-        }
-
-        // Validate weight
-        const parsedWeight = Number.parseFloat(formData.weight)
-        if (isNaN(parsedWeight) || parsedWeight <= 0 || parsedWeight > 100) {
-          throw new Error("Poids invalide (doit être entre 0 et 100)")
-        }
-
-        // Create payload for backend API (copy as new indicator)
-        const payload = {
-          name: sourceIndicator.name.trim().substring(0, 30), // Use original name without modification
-          description: sourceIndicator.description.trim().substring(0, 250), // Ensure max 250 chars
-          dataType: "Numérique",
-          unit: "Unité",
-          dimensionId: Number(targetDim.id), // Ensure it's a number
-          year: parsedTargetYear,
-          weight: Math.round(parsedWeight), // Keep as Integer percentage (0-100)
-          normalizationType: mapNormalizationType(formData.normalization)
-        }
-
         await createIndicator(payload)
         
         // Refresh data from backend
@@ -784,6 +813,21 @@ export default function IndicatorsPage() {
         
       } catch (error) {
         console.error("Error copying indicator:", error)
+        
+        // Check if it's a ranking validation warning
+        if (error.response?.status === 409 && error.response?.data?.message && error.response.data.message.includes("invalidera les classements")) {
+          const warningMessage = error.response.data.message
+          
+          // Show warning dialog for creation
+          setCreateWarning({
+            open: true,
+            message: warningMessage,
+            payload: payload,
+            mode: "copy"
+          })
+          return
+        }
+        
         // Display backend validation errors in the popup form
         setFormErrors({ 
           general: error.message || "Une erreur inattendue s'est produite"
@@ -794,6 +838,50 @@ export default function IndicatorsPage() {
       }
     }
   }, [addMode, formData, selectedIndicator, selectedYear, dimensions, indicators, clearMessages, validateFormData])
+
+  const handleForceCreateIndicator = useCallback(async () => {
+    if (!createWarning.payload) return
+    
+    setSaving(true)
+    try {
+      console.log("Force creating indicator:", createWarning.payload.name, "for year", createWarning.payload.year)
+      const result = await forceCreateIndicator(createWarning.payload)
+      console.log("✅ Indicator force created successfully:", result.name)
+      
+      // Refresh data from backend
+      const [indicatorsData, dimensionsData] = await Promise.all([
+        getIndicatorsForUI(),
+        getDimensionsForUI()
+      ])
+      setIndicators(indicatorsData)
+      setDimensions(dimensionsData)
+      
+      const actionWord = createWarning.mode === "copy" ? "copié" : "créé"
+      setSuccessMessage(`Indicateur "${createWarning.payload.name}" ${actionWord} avec succès pour l'année ${createWarning.payload.year}. Pensez à régénérer les classements pour cette année.`)
+      setIsAddDialogOpen(false)
+      setCreateWarning({ open: false, message: null, payload: null, mode: null })
+      
+      // Reset form manually to avoid dependency issue
+      setAddMode("new")
+      setSourceYear("")
+      setSelectedIndicator("")
+      setFormData({
+        name: "",
+        description: "",
+        weight: "",
+        dimension: "",
+        normalization: "minmax",
+      })
+      setFormErrors({})
+      setError(null)
+    } catch (error) {
+      console.error("Erreur lors de la création forcée de l'indicateur:", error)
+      const errorMessage = error.response?.data?.message || error.message || "Erreur lors de la création forcée de l'indicateur"
+      setFormErrors({ general: errorMessage })
+    } finally {
+      setSaving(false)
+    }
+  }, [createWarning.payload, createWarning.mode])
 
   const handleUpdateIndicator = useCallback(async () => {
     clearMessages()
@@ -1215,13 +1303,15 @@ export default function IndicatorsPage() {
                   <TableHead>Dimension</TableHead>
                   <TableHead className="text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <TooltipProvider>
+                      <TooltipProvider delayDuration={300}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            <div className="inline-flex">
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-blue-500 transition-colors" />
+                            </div>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
+                          <TooltipContent side="top" className="max-w-xs z-50">
+                            <p>
                               Pourcentage de poids que cet indicateur représente dans sa dimension. 
                               Tous les indicateurs d'une même dimension doivent totaliser 100%.
                             </p>
@@ -1233,15 +1323,17 @@ export default function IndicatorsPage() {
                   </TableHead>
                   <TableHead className="text-center">
                     <div className="flex items-center justify-center gap-1">
-                      <TooltipProvider>
+                      <TooltipProvider delayDuration={300}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                            <div className="inline-flex">
+                              <Info className="h-4 w-4 text-muted-foreground cursor-help hover:text-blue-500 transition-colors" />
+                            </div>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="max-w-xs">
-                              Poids final de l'indicateur dans le calcul global du classement. 
-                              Calculé en multipliant le poids de l'indicateur par le poids de sa dimension.
+                          <TooltipContent side="top" className="max-w-xs z-50">
+                            <p>
+                              Poids final de l'indicateur dans le calcul global du classement.<br/>
+                              <strong>Formule:</strong> (Poids Dimension × Poids Indicateur) ÷ 100
                             </p>
                           </TooltipContent>
                         </Tooltip>
@@ -1334,45 +1426,114 @@ export default function IndicatorsPage() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirm.open} onOpenChange={(open) => setDeleteConfirm({ open, indicator: null })}>
+      <Dialog open={deleteConfirm.open} onOpenChange={(open) => setDeleteConfirm({ open, indicator: null, rankingWarning: null })}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center text-red-600">
               <AlertCircle className="h-5 w-5 mr-2" />
               Confirmer la suppression
             </DialogTitle>
-            <DialogDescription>
-              Êtes-vous sûr de vouloir supprimer l'indicateur{" "}
-              <strong>"{deleteConfirm.indicator?.name}"</strong> ?{" "}
-              Cette action est irréversible.
+            <DialogDescription className="space-y-3">
+              <div>
+                Êtes-vous sûr de vouloir supprimer l'indicateur{" "}
+                <strong>"{deleteConfirm.indicator?.name}"</strong> ?{" "}
+                Cette action est irréversible.
+              </div>
+              
+              {deleteConfirm.rankingWarning && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-r-lg p-4 mt-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-amber-800 mb-2">
+                        {deleteConfirm.rankingWarning.message.replace(/🔄 Impact:\s*/, '')}
+                      </div>
+                      <div className="text-sm text-amber-700">
+                        Les classements devront être recalculés après suppression
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="flex justify-end gap-2 mt-4">
             <Button 
               variant="outline" 
-              onClick={() => setDeleteConfirm({ open: false, indicator: null })}
+              onClick={() => setDeleteConfirm({ open: false, indicator: null, rankingWarning: null })}
               disabled={saving}
             >
               Annuler
             </Button>
             <Button 
               variant="destructive" 
-              onClick={confirmDelete}
+              onClick={() => confirmDelete(deleteConfirm.rankingWarning ? true : false)}
               disabled={saving}
             >
               {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {saving ? "Suppression..." : "Supprimer"}
+              {saving ? "Suppression en cours..." : deleteConfirm.rankingWarning ? "Supprimer quand même" : "Supprimer"}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Deletion Warning Dialog */}
-      <DeletionWarningDialog
-        open={warningDialog.open}
-        onClose={() => setWarningDialog({ open: false, data: null })}
-        warningData={warningDialog.data}
-      />
+      {/* Create Warning Dialog */}
+      <Dialog open={createWarning.open} onOpenChange={(open) => setCreateWarning({ open, message: null, payload: null, mode: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center text-amber-600">
+              <AlertTriangle className="h-5 w-5 mr-2" />
+              Confirmer la création
+            </DialogTitle>
+            <DialogDescription className="space-y-3">
+              <div>
+                Êtes-vous sûr de vouloir créer l'indicateur{" "}
+                <strong>"{createWarning.payload?.name}"</strong> pour l'année {createWarning.payload?.year} ?
+              </div>
+              
+              {createWarning.message && (
+                <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-400 rounded-r-lg p-4 mt-4">
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium text-amber-800 mb-2">
+                        {createWarning.message}
+                      </div>
+                      <div className="text-sm text-amber-700">
+                        Les classements devront être recalculés après création
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-4">
+            <Button 
+              variant="outline" 
+              onClick={() => setCreateWarning({ open: false, message: null, payload: null, mode: null })}
+              disabled={saving}
+            >
+              Annuler
+            </Button>
+            <Button 
+              variant="default" 
+              onClick={handleForceCreateIndicator}
+              disabled={saving}
+              className="bg-amber-600 hover:bg-amber-700"
+            >
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {saving ? "Création en cours..." : "Créer quand même"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+
     </div>
   )
 }
