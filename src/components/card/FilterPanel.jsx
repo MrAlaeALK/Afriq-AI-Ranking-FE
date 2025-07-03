@@ -36,9 +36,12 @@ function FilterPanel() {
   };
 
   const handleWeightChange = (id, weight) => {
+    // Maintenant le slider va directement de 0 à 100 (pas de multiplication)
+    const backendWeight = parseInt(weight);
+    
     const newDimensions = yearDimensions.map(
       dimension => dimension.id === id ?
-        { ...dimension, weight: weight } : dimension
+        { ...dimension, weight: backendWeight } : dimension
     );
     setYearDimensions(newDimensions);
   };
@@ -159,7 +162,7 @@ function FilterPanel() {
                     <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">{dimension.name}</span>
                   </div>
                   <div className="flex items-center">
-                    <span className="text-sm font-medium mr-2 text-gray-900 dark:text-gray-100">{dimension.weight}</span>
+                    <span className="text-sm font-medium mr-2 text-gray-900 dark:text-gray-100">{dimension.weight}%</span>
                     <button
                       onClick={() => handleRemoveCriteria(dimension.id)}
                       className="p-1 text-gray-400 hover:text-red-500 transition-colors"
@@ -174,11 +177,21 @@ function FilterPanel() {
                 <input
                   type="range"
                   min="0"
-                  max="10"
+                  max="100"
+                  step="1"
                   value={dimension.weight}
                   onChange={(e) => handleWeightChange(dimension.id, parseInt(e.target.value))}
                   className="w-full h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer"
                 />
+                {/* Labels pour clarifier l'échelle */}
+                <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  <span>0%</span>
+                  <span>20%</span>
+                  <span>40%</span>
+                  <span>60%</span>
+                  <span>80%</span>
+                  <span>100%</span>
+                </div>
               </div>
             );
           })}

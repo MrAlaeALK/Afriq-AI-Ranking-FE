@@ -14,7 +14,7 @@ import { useTranslation } from 'react-i18next';
 
 export default function ComparisonPage() {
   const {t} = useTranslation();
-  const { year, setYear } = useContext(YearContext)
+  const { year, setYear, availableYears, loading } = useContext(YearContext)
   const { countriesRanking, setCountriesRanking, countriesRankingError } = useContext(CountriesRankingContext);
   const { scores, setScores, scoresError } = useContext(ScoresContext)
   const {dimensions} = useContext(DimensionContext)
@@ -108,6 +108,14 @@ export default function ComparisonPage() {
     setCriteriaCount(newCount);
   };
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <div className="text-gray-600 dark:text-gray-400">Chargement des années disponibles...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen flex flex-col bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
 
@@ -121,10 +129,20 @@ export default function ComparisonPage() {
           </div>
         </section>
 
-        <select value={year} onChange={e => setYear(parseInt(e.target.value))}>
-          <option value="2021">2021</option>
-          <option value="2020">2020</option>
-        </select>
+        {/* Sélecteur d'année dynamique */}
+        <div className="container mx-auto px-4 mb-6">
+          <select 
+            value={year} 
+            onChange={e => setYear(parseInt(e.target.value))}
+            className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-purple-500"
+          >
+            {availableYears.map(availableYear => (
+              <option key={availableYear} value={availableYear}>
+                {availableYear}
+              </option>
+            ))}
+          </select>
+        </div>
 
         {/* Sélection des critères */}
         <CriteriaSelector
@@ -176,5 +194,5 @@ export default function ComparisonPage() {
         )}
       </main>
     </div>
-  );;
+  );
 }

@@ -48,7 +48,11 @@ function MapSection({ yearDimensions, setYearDimensions, countriesRanking, setCo
                 countriesRanking={countriesRanking}
               />
             </div>
-            <RegionalTrends />
+            <RegionalTrends 
+              countriesRanking={countriesRanking}
+              yearDimensions={yearDimensions}
+              scores={scores}
+            />
           </div>
         </div>
       </div>
