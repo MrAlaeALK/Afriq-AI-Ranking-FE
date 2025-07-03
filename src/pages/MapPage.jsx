@@ -15,6 +15,10 @@ function MapPage() {
   const {scores, setScores} = useContext(ScoresContext)
   const {year, setYear, availableYears, loading} = useContext(YearContext)
   
+  // 🔍 Debug: Log des années dans MapPage
+  console.log('🔍 DEBUG MapPage - availableYears:', availableYears);
+  console.log('🔍 DEBUG MapPage - year actuel:', year);
+  
   useEffect(() => {
     setYearDimensions(defaultYearDimensions)
   }, [defaultYearDimensions])

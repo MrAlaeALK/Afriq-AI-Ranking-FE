@@ -9,6 +9,8 @@ function MapSection({ yearDimensions, setYearDimensions, countriesRanking, setCo
 
   const [colorScale, setColorScale] = useState('green-red');
   const [selectedCountry, setSelectedCountry] = useState(null);
+  const [showCountryNames, setShowCountryNames] = useState(true);
+  const [showScores, setShowScores] = useState(true);
 
 
   return (
@@ -25,7 +27,14 @@ function MapSection({ yearDimensions, setYearDimensions, countriesRanking, setCo
               setCountriesRanking={setCountriesRanking} 
               scores={scores} 
             />
-            <DisplayOptions colorScale={colorScale} setColorScale={setColorScale} />
+            <DisplayOptions 
+              colorScale={colorScale} 
+              setColorScale={setColorScale}
+              showCountryNames={showCountryNames}
+              setShowCountryNames={setShowCountryNames}
+              showScores={showScores}
+              setShowScores={setShowScores}
+            />
           </div>
 
           {/* Colonne de droite avec carte et tableau */}
@@ -39,6 +48,8 @@ function MapSection({ yearDimensions, setYearDimensions, countriesRanking, setCo
                 scores={scores}
                 countriesRanking={countriesRanking}
                 setCountriesRanking={setCountriesRanking}
+                showCountryNames={showCountryNames}
+                showScores={showScores}
               />
               <CountryRanking
                 colorScale={colorScale}

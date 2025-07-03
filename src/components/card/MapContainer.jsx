@@ -3,7 +3,7 @@ import MapComponent from './MapComponent';
 import ColorLegend from './ColorLegend';
 import { useTranslation } from 'react-i18next';
 
-function MapContainer({ colorScale, yearDimensions, selectedCountry, onCountrySelect, countriesRanking, scores, setCountriesRanking }) {
+function MapContainer({ colorScale, yearDimensions, selectedCountry, onCountrySelect, countriesRanking, scores, setCountriesRanking, showCountryNames, showScores }) {
   const { t } = useTranslation();
 
   return (
@@ -30,6 +30,8 @@ function MapContainer({ colorScale, yearDimensions, selectedCountry, onCountrySe
             countriesRanking={countriesRanking}
             scores={scores}
             setCountriesRanking={setCountriesRanking}
+            showCountryNames={showCountryNames}
+            showScores={showScores}
           />
         </div>
 

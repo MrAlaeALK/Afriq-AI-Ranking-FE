@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 
-function DisplayOptions({ colorScale, setColorScale }) {
+function DisplayOptions({ colorScale, setColorScale, showCountryNames, setShowCountryNames, showScores, setShowScores }) {
   const { t } = useTranslation();
 
   return (
@@ -12,9 +12,10 @@ function DisplayOptions({ colorScale, setColorScale }) {
           <input
             type="checkbox"
             className="rounded text-purple-600 focus:ring-purple-500 dark:focus:ring-purple-400"
-            defaultChecked
+            checked={showCountryNames}
+            onChange={(e) => setShowCountryNames(e.target.checked)}
           />
-          <span className="ml-2 text-gray-700 dark:text-gray-300">Afficher les noms des pays</span>
+          <span className="ml-2 text-gray-700 dark:text-gray-300">{t('showCountryNames', 'Afficher les noms des pays')}</span>
         </label>
       </div>
 
@@ -23,9 +24,10 @@ function DisplayOptions({ colorScale, setColorScale }) {
           <input
             type="checkbox"
             className="rounded text-purple-600 focus:ring-purple-500 dark:focus:ring-purple-400"
-            defaultChecked
+            checked={showScores}
+            onChange={(e) => setShowScores(e.target.checked)}
           />
-          <span className="ml-2 text-gray-700 dark:text-gray-300">Afficher les scores</span>
+          <span className="ml-2 text-gray-700 dark:text-gray-300">{t('showScores', 'Afficher les scores')}</span>
         </label>
       </div>
 

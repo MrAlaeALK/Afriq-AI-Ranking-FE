@@ -20,7 +20,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 // // this component is still filled with problems which mostly have one source which is that react leaflet is not reacting to react state change
-const MapComponent = ({ selectedCountry, colorScale }) => {
+const MapComponent = ({ selectedCountry, colorScale, showCountryNames, showScores }) => {
 
   const {countriesRanking} = useContext(CountriesRankingContext);
   const {yearDimensions} = useContext(YearDimensionContext);
@@ -82,17 +82,31 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
       });
   }, []);
 
-  // Find centroid of a country by name
-  const findCountryCentroid = (countryCode) => {
+  // Find centroid of a country by DB code (convertit DB code -> GeoJSON code)
+  const findCountryCentroid = (dbCountryCode) => {
     if (!geojsonData) return null;
 
+    // 🔄 Mapper inverse: convertir code DB vers code GeoJSON
+    const dbToGeoJSONMapping = Object.fromEntries(
+      Object.entries(countryCodeMapping).map(([geoCode, dbCode]) => [dbCode, geoCode])
+    );
+
+    // Trouver le code GeoJSON correspondant au code DB
+    const geoJSONCode = dbToGeoJSONMapping[dbCountryCode];
+    
+    if (!geoJSONCode) {
+      console.warn(`🔍 Aucun mapping trouvé pour le code DB: ${dbCountryCode}`);
+      return null;
+    }
+
     const feature = geojsonData.features.find(f => {
-      const code =  f.properties?.["ISO3166-1-Alpha-2"] ||
-      'Unknown country';
-      return code === countryCode;
+      const geoCode = f.properties?.["ISO3166-1-Alpha-3"] || 'Unknown';
+      return geoCode === geoJSONCode;
     });
 
     if (feature && feature.geometry) {
+      console.log(`✅ Centroïde trouvé pour: ${dbCountryCode} → ${geoJSONCode}`);
+      
       // For Polygon
       if (feature.geometry.type === 'Polygon') {
         const coords = feature.geometry.coordinates[0];
@@ -114,6 +128,8 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
         });
         return [lat / coords.length, lng / coords.length];
       }
+    } else {
+      console.warn(`⚠️ Feature non trouvé pour: ${dbCountryCode} → ${geoJSONCode}`);
     }
     return null;
   };
@@ -165,79 +181,73 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
     return '#cccccc'; // Default gray
   };
 
-  // 🔄 Mapping complet entre codes GeoJSON (ISO) et codes base de données
+  // 🔄 Mapping complet entre codes GeoJSON (ISO-3) et codes base de données (ISO-2 + customs)
   const countryCodeMapping = {
     // ✅ Afrique du Nord
-    'MAR': 'MOR',  // Maroc (confirmé)
-    'DZA': 'ALG',  // Algérie 
-    'TUN': 'TUN',  // Tunisie
-    'LBY': 'LBY',  // Libye
-    'EGY': 'EGY',  // Égypte
-    'SDN': 'SUD',  // Soudan
-    'SSD': 'SSD',  // Soudan du Sud
+    'MAR': 'MOR',  // Maroc (confirmé custom code)
+    'DZA': 'DZ',   // Algérie (ISO-2)
+    'TUN': 'TN',   // Tunisie (ISO-2)
+    'LBY': 'LY',   // Libye (ISO-2)
+    'EGY': 'EG',   // Égypte (ISO-2)
+    'SDN': 'SD',   // Soudan (ISO-2)
+    'SSD': 'SS',   // Soudan du Sud (ISO-2)
     
     // ✅ Afrique de l'Ouest
-    'NGA': 'NGA',  // Nigeria
-    'GHA': 'GHA',  // Ghana
-    'CIV': 'CIV',  // Côte d'Ivoire
-    'SEN': 'SEN',  // Sénégal
-    'MLI': 'MLI',  // Mali
-    'BFA': 'BFA',  // Burkina Faso
-    'NER': 'NER',  // Niger
-    'GIN': 'GIN',  // Guinée
-    'SLE': 'SLE',  // Sierra Leone
-    'LBR': 'LBR',  // Libéria
-    'GNB': 'GNB',  // Guinée-Bissau
-    'GMB': 'GMB',  // Gambie
-    'CPV': 'CPV',  // Cap-Vert
-    'MRT': 'MRT',  // Mauritanie
-    'TGO': 'TGO',  // Togo
-    'BEN': 'BEN',  // Bénin
+    'NGA': 'NG',   // Nigeria (ISO-2)
+    'GHA': 'GH',   // Ghana (ISO-2)
+    'CIV': 'CI',   // Côte d'Ivoire (ISO-2)
+    'SEN': 'SN',   // Sénégal (ISO-2)
+    'MLI': 'ML',   // Mali (ISO-2)
+    'BFA': 'BF',   // Burkina Faso (ISO-2)
+    'NER': 'NE',   // Niger (ISO-2)
+    'GIN': 'GN',   // Guinée (ISO-2)
+    'SLE': 'SL',   // Sierra Leone (ISO-2)
+    'LBR': 'LR',   // Libéria (ISO-2)
+    'GNB': 'GW',   // Guinée-Bissau (ISO-2)
+    'GMB': 'GM',   // Gambie (ISO-2)
+    'CPV': 'CV',   // Cap-Vert (ISO-2)
+    'MRT': 'MR',   // Mauritanie (ISO-2)
+    'TGO': 'TG',   // Togo (ISO-2)
+    'BEN': 'BJ',   // Bénin (ISO-2)
     
     // ✅ Afrique de l'Est
-    'ETH': 'ETH',  // Éthiopie
-    'KEN': 'KEN',  // Kenya
-    'UGA': 'UGA',  // Ouganda
-    'TZA': 'TZA',  // Tanzanie
-    'RWA': 'RWA',  // Rwanda
-    'BDI': 'BDI',  // Burundi
-    'SOM': 'SOM',  // Somalie
-    'DJI': 'DJI',  // Djibouti
-    'ERI': 'ERI',  // Érythrée
-    'MWI': 'MWI',  // Malawi
+    'ETH': 'ET',   // Éthiopie (ISO-2)
+    'KEN': 'KE',   // Kenya (ISO-2)
+    'UGA': 'UG',   // Ouganda (ISO-2)
+    'TZA': 'TZ',   // Tanzanie (ISO-2)
+    'RWA': 'RW',   // Rwanda (ISO-2)
+    'BDI': 'BI',   // Burundi (ISO-2)
+    'SOM': 'SO',   // Somalie (ISO-2)
+    'DJI': 'DJ',   // Djibouti (ISO-2)
+    'ERI': 'ER',   // Érythrée (ISO-2)
+    'MWI': 'MW',   // Malawi (ISO-2)
     
     // ✅ Afrique Centrale
-    'CMR': 'CMR',  // Cameroun
-    'CAF': 'CAF',  // République Centrafricaine
-    'TCD': 'TCD',  // Tchad
-    'COG': 'COG',  // Congo (République du)
-    'COD': 'COD',  // Congo (RD)
-    'GAB': 'GAB',  // Gabon
-    'GNQ': 'GNQ',  // Guinée Équatoriale
-    'STP': 'STP',  // São Tomé et Principe
+    'CMR': 'CM',   // Cameroun (ISO-2)
+    'CAF': 'CF',   // République Centrafricaine (ISO-2)
+    'TCD': 'TD',   // Tchad (ISO-2)
+    'COG': 'CG',   // Congo (République du) (ISO-2)
+    'COD': 'CD',   // Congo (RD) (ISO-2)
+    'GAB': 'GA',   // Gabon (ISO-2)
+    'GNQ': 'GQ',   // Guinée Équatoriale (ISO-2)
+    'STP': 'ST',   // São Tomé et Principe (ISO-2)
     
     // ✅ Afrique Australe
-    'ZAF': 'ZAF',  // Afrique du Sud
-    'ZWE': 'ZWE',  // Zimbabwe
-    'ZMB': 'ZMB',  // Zambie
-    'BWA': 'BWA',  // Botswana
-    'NAM': 'NAM',  // Namibie
-    'AGO': 'AGO',  // Angola
-    'LSO': 'LSO',  // Lesotho
-    'SWZ': 'SWZ',  // Eswatini
-    'MOZ': 'MOZ',  // Mozambique
+    'ZAF': 'ZA',   // Afrique du Sud (ISO-2)
+    'ZWE': 'ZW',   // Zimbabwe (ISO-2)
+    'ZMB': 'ZM',   // Zambie (ISO-2)
+    'BWA': 'BW',   // Botswana (ISO-2)
+    'NAM': 'NA',   // Namibie (ISO-2)
+    'AGO': 'AO',   // Angola (ISO-2)
+    'LSO': 'LS',   // Lesotho (ISO-2)
+    'SWZ': 'SZ',   // Eswatini (ISO-2)
+    'MOZ': 'MZ',   // Mozambique (ISO-2)
     
     // ✅ Îles Africaines
-    'MDG': 'MDG',  // Madagascar
-    'MUS': 'MUS',  // Maurice
-    'SYC': 'SYC',  // Seychelles
-    'COM': 'COM',  // Comores
-    
-    // 🔄 Mappings alternatifs pour certains pays (si les codes DB diffèrent)
-    // Ajustez selon vos vraies données :
-    // 'ZAF': 'RSA',  // Afrique du Sud (si code = RSA)
-    // 'TZA': 'TAN',  // Tanzanie (si code = TAN)
-    // 'COD': 'DRC',  // RD Congo (si code = DRC)
+    'MDG': 'MG',   // Madagascar (ISO-2)
+    'MUS': 'MU',   // Maurice (ISO-2)
+    'SYC': 'SC',   // Seychelles (ISO-2)
+    'COM': 'KM',   // Comores (ISO-2)
   };
 
   // 🤖 Système de détection automatique des mappings manquants
@@ -310,8 +320,10 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
     // 🐛 DEBUG: Log pour tous les pays avec données (pas seulement le Maroc)
     if (countryData) {
       const countryFlag = {
-        'MOR': '🇲🇦', 'ALG': '🇩🇿', 'TUN': '🇹🇳', 'EGY': '🇪🇬', 
-        'NGA': '🇳🇬', 'ZAF': '🇿🇦', 'KEN': '🇰🇪', 'ETH': '🇪🇹'
+        'MOR': '🇲🇦', 'DZ': '🇩🇿', 'TN': '🇹🇳', 'EG': '🇪🇬', 
+        'NG': '🇳🇬', 'ZA': '🇿🇦', 'KE': '🇰🇪', 'ET': '🇪🇹',
+        'GH': '🇬🇭', 'CI': '🇨🇮', 'SN': '🇸🇳', 'ML': '🇲🇱',
+        'CM': '🇨🇲', 'UG': '🇺🇬', 'RW': '🇷🇼', 'TZ': '🇹🇿'
       };
       const flag = countryFlag[dbCode] || '🏴';
       
@@ -367,15 +379,32 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
           c => c.countryCode === dbCode
         );
         if(countryData){
-          layer.bindTooltip(
-            `<strong>Name: ${countryData.countryName}<br/>Rank: ${countryData.rank}<br/>Score: ${countryData.finalScore}</strong>`,
-            {
-              direction: 'top',
-              sticky: true,
-              opacity: 0.9,
-              // className: 'custom-tooltip', // optional for styling
-            }
-          ).openTooltip()
+          // 🎛️ Construction dynamique du tooltip selon les options d'affichage
+          let tooltipContent = '<strong>';
+          
+          if (showCountryNames) {
+            tooltipContent += `Name: ${countryData.countryName}`;
+          }
+          
+          if (showScores) {
+            if (showCountryNames) tooltipContent += '<br/>';
+            tooltipContent += `Rank: ${countryData.rank}<br/>Score: ${countryData.finalScore}`;
+          }
+          
+          tooltipContent += '</strong>';
+          
+          // N'afficher le tooltip que si au moins une option est activée
+          if (showCountryNames || showScores) {
+            layer.bindTooltip(
+              tooltipContent,
+              {
+                direction: 'top',
+                sticky: true,
+                opacity: 0.9,
+                // className: 'custom-tooltip', // optional for styling
+              }
+            ).openTooltip();
+          }
         }
       },
       mouseout: (e) => {
@@ -574,7 +603,7 @@ const MapComponent = ({ selectedCountry, colorScale }) => {
 
         {geojsonData && (
           <GeoJSON
-            key={JSON.stringify([countriesRanking, colorScale])}  // temporary fix to year change to reflect on map and color problem because when we add this we force react to render the new component with the new values of state
+            key={JSON.stringify([countriesRanking, colorScale, showCountryNames, showScores])}  // Force re-render when display options change
             data={geojsonData}
             onEachFeature={onEachFeature}
             style={getGeoJSONStyle}
